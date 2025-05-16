@@ -14,79 +14,20 @@ import { User } from '../users/entities/user.entity';
 export class BrandSuppliersController {
   constructor(private readonly brandSuppliersService: BrandSuppliersService) {}
 
-  @Get()
-  @ApiOperation({ 
-    summary: 'Obtener proveedores con filtros', 
-    description: 'Obtiene todos los proveedores con opción de filtrar por marca y estado' 
-  })
-  @ApiQuery({ 
-    name: 'brand_id', 
-    required: false, 
-    type: Number,
-    description: 'ID de la marca para filtrar proveedores',
-    example: 1
-  })
-  @ApiQuery({ 
-    name: 'isActive', 
-    required: false, 
-    type: Boolean,
-    description: 'Filtrar por estado activo/inactivo',
-    example: true
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de proveedores filtrados',
-    type: BrandSupplier,
-    isArray: true,
-    examples: {
-      'Proveedores activos': {
-        summary: 'Ejemplo de respuesta exitosa',
-        value: [
-          {
-            supplierId: 1,
-            name: 'Proveedor de Materiales Premium S.A.',
-            contactPerson: 'Juan Pérez',
-            email: 'contacto@proveedormaterials.com',
-            phone: '9876543210',
-            address: 'Av. Industrial 123, Lima, Perú',
-            isActive: true,
-            createdAt: '2023-05-15',
-            updatedAt: '2023-05-20',
-            brand: {
-              brandId: 1,
-              name: 'Nike'
-            }
-          }
-        ]
-      },
-      'Proveedores inactivos': {
-        summary: 'Ejemplo de proveedores inactivos',
-        value: [
-          {
-            supplierId: 3,
-            name: 'Proveedor Antiguo S.A.',
-            contactPerson: null,
-            email: 'antiguo@proveedor.com',
-            phone: null,
-            address: null,
-            isActive: false,
-            createdAt: '2022-01-10',
-            updatedAt: '2023-01-15',
-            brand: {
-              brandId: 1,
-              name: 'Nike'
-            }
-          }
-        ]
-      }
-    }
-  })
-  async findAll(
-    @Query('brandId') brandId?: number,
-    @Query('isActive') isActive?: boolean,
-  ): Promise<BrandSupplier[]> {
-    return this.brandSuppliersService.findAll({ brandId, isActive });
-  }
+@Get()
+@ApiOperation({ 
+  summary: 'Obtener todos los proveedores', 
+  description: 'Obtiene la lista completa de proveedores de marcas' 
+})
+@ApiResponse({
+  status: 200,
+  description: 'Lista de todos los proveedores',
+  type: BrandSupplier,
+  isArray: true
+})
+async findAll(): Promise<BrandSupplier[]> {
+  return this.brandSuppliersService.findAll();
+}
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un proveedor por ID' })
