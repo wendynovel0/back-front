@@ -5,7 +5,7 @@ import { Repository, Between, Like, In } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
-import { ActionLogsService } from '../logs/logs.service';
+import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
 import { Brand } from '../brands/entities/brand.entity';
 import { ProductSearchDto } from './dto/product-search.dto';
