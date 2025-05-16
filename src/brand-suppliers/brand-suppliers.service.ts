@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 import { BrandSupplier } from './entities/brand-supplier.entity';
 import { CreateBrandSupplierDto } from './dto/create-brand-supplier.dto';
 import { UpdateBrandSupplierDto } from './dto/update-brand-supplier.dto';
-import { ActionLogsService } from '../logs/logs.service';
+import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
 
 @Injectable()

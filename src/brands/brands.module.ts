@@ -4,7 +4,7 @@ import { BrandsService } from './brand.service';
 import { BrandsController } from './brands.controller';
 import { Brand } from './entities/brand.entity';
 import { AuthModule } from '../auth/auth.module';
-import { LogsModule } from '../logs/logs.module';
+import { LogsModule } from '../action-logs/action-logs.module';
 import { User } from '../users/entities/user.entity';
 
 @Module({

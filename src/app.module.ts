@@ -5,7 +5,7 @@ import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
 import { BrandsModule } from './brands/brands.module';
 import { ProductsModule } from './products/products.module';
-import { LogsModule } from './logs/logs.module';
+import { LogsModule } from './action-logs/action-logs.module';
 import { BrandSuppliersModule } from './brand-suppliers/brand-suppliers.module'
 
 @Module({

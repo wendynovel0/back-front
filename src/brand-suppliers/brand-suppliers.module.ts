@@ -4,7 +4,7 @@ import { BrandSuppliersService } from './brand-suppliers.service';
 import { BrandSuppliersController } from './brand-suppliers.controller';
 import { BrandSupplier } from './entities/brand-supplier.entity';
 import { BrandsModule } from '../brands/brands.module';
-import { LogsModule } from '../logs/logs.module';
+import { LogsModule } from '../action-logs/action-logs.module';
 
 @Module({
   imports: [
