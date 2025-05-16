@@ -15,21 +15,10 @@ export class BrandSuppliersService {
     private readonly actionLogsService: ActionLogsService,
   ) {}
 
-  async findAll(filters?: { brandId?: number; isActive?: boolean }): Promise<BrandSupplier[]> {
-  const where: any = {};
-  
-  if (filters?.brandId !== undefined) {
-    where.brand = { id: filters.brandId }; 
-  }
-  
-  if (filters?.isActive !== undefined) {
-    where.isActive = filters.isActive;
-  }
-
+  async findAll(): Promise<BrandSupplier[]> {
   return this.brandSupplierRepository.find({
-    where,
     relations: ['brand'],
-    order: { name: 'ASC' },
+    order: { name: 'ASC' }
   });
 }
   async findOne(id: number): Promise<BrandSupplier> {
