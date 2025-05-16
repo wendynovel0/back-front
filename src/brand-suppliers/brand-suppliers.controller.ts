@@ -2,13 +2,14 @@ import { Controller, Get, Post, Body, Param, Put, Patch, Delete, ParseIntPipe, U
 import { BrandSuppliersService } from './brand-suppliers.service';
 import { CreateBrandSupplierDto } from './dto/create-brand-supplier.dto';
 import { UpdateBrandSupplierDto } from './dto/update-brand-supplier.dto';
-import { ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody, ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { BrandSupplier } from './entities/brand-supplier.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
 
 @ApiTags('Proveedores de Marcas')
 @Controller('brand-suppliers')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
 export class BrandSuppliersController {
   constructor(private readonly brandSuppliersService: BrandSuppliersService) {}
