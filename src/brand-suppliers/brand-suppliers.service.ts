@@ -16,23 +16,20 @@ export class BrandSuppliersService {
   ) {}
 
   async findAll(filters?: { brandId?: number; isActive?: boolean }): Promise<BrandSupplier[]> {
-    const where: any = {};
-    
-    if (filters?.brandId) {
-      where.brand = { brandId: filters.brandId };
-    }
-    
-    if (filters?.isActive !== undefined) {
-      where.isActive = filters.isActive;
-    }
+  const queryBuilder = this.brandSupplierRepository
+    .createQueryBuilder('supplier')
+    .leftJoinAndSelect('supplier.brand', 'brand');
 
-    return this.brandSupplierRepository.find({
-      where,
-      relations: ['brand'],
-      order: { name: 'ASC' },
-    });
+  if (filters?.brandId) {
+    queryBuilder.where('brand.id = :brandId', { brandId: filters.brandId });
   }
 
+  if (filters?.isActive !== undefined) {
+    queryBuilder.andWhere('supplier.is_active = :isActive', { isActive: filters.isActive });
+  }
+
+  return queryBuilder.orderBy('supplier.name', 'ASC').getMany();
+}
   async findOne(id: number): Promise<BrandSupplier> {
   const supplier = await this.brandSupplierRepository.findOne({
     where: { id }, // Changed from supplierId to id
