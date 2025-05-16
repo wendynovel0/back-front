@@ -1,31 +1,50 @@
+// src/brand-suppliers/entities/brand-supplier.entity.ts
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Brand } from '../../brands/entities/brand.entity';
-import { Column, Entity, ManyToOne, PrimaryGeneratedColumn, JoinColumn } from 'typeorm';
-import { DateAudit } from '../../common/entities/date-audit.entity';
+import { User } from '../../users/entities/user.entity';
 
-@Entity('brand_suppliers')
-export class BrandSupplier extends DateAudit {
+@Entity({ name: 'brand_suppliers' })
+export class BrandSupplier {
   @PrimaryGeneratedColumn({ name: 'supplier_id' })
-  supplierId: number;
+  id: number; // Changed from supplierId to id to match Brand entity pattern
 
-  @Column({ name: 'name', length: 100, nullable: false })
+  @Column({ name: 'name' })
   name: string;
 
-  @Column({ name: 'contact_person', length: 100, nullable: true })
-  contactPerson: string;
+  @Column({ name: 'contact_person', nullable: true })
+  contactPerson?: string;
 
-  @Column({ name: 'email', length: 100, nullable: false, unique: true })
+  @Column({ name: 'email' })
   email: string;
 
-  @Column({ name: 'phone', length: 10, nullable: true })
-  phone: string;
+  @Column({ name: 'phone', nullable: true })
+  phone?: string;
 
-  @Column({ name: 'address', type: 'text', nullable: true })
-  address: string;
+  @Column({ name: 'address', nullable: true })
+  address?: string;
+
+  @Column({ name: 'is_active', default: true })
+  isActive: boolean;
+
+  @Column({ name: 'created_at', type: 'date', default: () => 'CURRENT_DATE' })
+  createdAt: Date;
+
+  @Column({ name: 'updated_at', type: 'date', default: () => 'CURRENT_DATE' })
+  updatedAt: Date;
 
   @ManyToOne(() => Brand, (brand) => brand.suppliers)
   @JoinColumn({ name: 'brand_id' })
   brand: Brand;
 
-  @Column({ name: 'is_active', default: true })
-  isActive: boolean;
+  @Column({ name: 'brand_id' })
+  brandId: number;
+
+  // Add these if you need user tracking
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'created_by' })
+  createdBy: User;
+
+  @ManyToOne(() => User)
+  @JoinColumn({ name: 'updated_by' })
+  updatedBy: User;
 }
