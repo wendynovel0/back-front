@@ -34,17 +34,18 @@ export class BrandSuppliersService {
   }
 
   async findOne(id: number): Promise<BrandSupplier> {
-    const supplier = await this.brandSupplierRepository.findOne({
-      where: { supplierId: id },
-      relations: ['brand'],
-    });
+  const supplier = await this.brandSupplierRepository.findOne({
+    where: { id }, // Changed from supplierId to id
+    relations: ['brand'],
+  });
 
-    if (!supplier) {
-      throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
-    }
-
-    return supplier;
+  if (!supplier) {
+    throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
   }
+
+  return supplier;
+}
+
 
   async create(createBrandSupplierDto: CreateBrandSupplierDto, user: User): Promise<BrandSupplier> {
     try {
@@ -55,7 +56,7 @@ export class BrandSuppliersService {
         userId: user.user_id,
         actionType: 'CREATE',
         entityType: 'BrandSupplier',
-        entityId: savedSupplier.supplierId,
+        entityId: savedSupplier.id,
         newValue: savedSupplier,
       });
 
@@ -69,34 +70,34 @@ export class BrandSuppliersService {
   }
 
   async replace(id: number, createBrandSupplierDto: CreateBrandSupplierDto, user: User): Promise<BrandSupplier> {
-    const existing = await this.findOne(id);
-    const oldValues = { ...existing };
+  const existing = await this.findOne(id);
+  const oldValues = { ...existing };
 
-    try {
-      const supplier = this.brandSupplierRepository.create({
-        ...createBrandSupplierDto,
-        supplierId: id,
-      });
-      
-      const updatedSupplier = await this.brandSupplierRepository.save(supplier);
+  try {
+    const supplier = this.brandSupplierRepository.create({
+      ...createBrandSupplierDto,
+      id, // Changed from supplierId to id
+    });
+    
+    const updatedSupplier = await this.brandSupplierRepository.save(supplier);
 
-      await this.actionLogsService.logAction({
-        userId: user.user_id,
-        actionType: 'UPDATE',
-        entityType: 'BrandSupplier',
-        entityId: updatedSupplier.supplierId,
-        oldValue: oldValues,
-        newValue: updatedSupplier,
-      });
+    await this.actionLogsService.logAction({
+      userId: user.user_id,
+      actionType: 'UPDATE',
+      entityType: 'BrandSupplier',
+      entityId: updatedSupplier.id, // Changed from supplierId to id
+      oldValue: oldValues,
+      newValue: updatedSupplier,
+    });
 
-      return updatedSupplier;
-    } catch (error) {
-      if (error.code === '23505') {
-        throw new ConflictException('El email ya está registrado');
-      }
-      throw error;
+    return updatedSupplier;
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new ConflictException('El email ya está registrado');
     }
+    throw error;
   }
+}
 
   async update(id: number, updateBrandSupplierDto: UpdateBrandSupplierDto, user: User): Promise<BrandSupplier> {
     const supplier = await this.findOne(id);
@@ -110,7 +111,7 @@ export class BrandSuppliersService {
         userId: user.user_id,
         actionType: 'UPDATE',
         entityType: 'BrandSupplier',
-        entityId: updatedSupplier.supplierId,
+        entityId: updatedSupplier.id,
         oldValue: oldValues,
         newValue: updatedSupplier,
       });
@@ -125,20 +126,20 @@ export class BrandSuppliersService {
   }
 
   async remove(id: number, user: User): Promise<void> {
-    const supplier = await this.findOne(id);
-    
-    await this.actionLogsService.logAction({
-      userId: user.user_id,
-      actionType: 'DELETE',
-      entityType: 'BrandSupplier',
-      entityId: supplier.supplierId,
-      oldValue: supplier,
-    });
+  const supplier = await this.findOne(id);
+  
+  await this.actionLogsService.logAction({
+    userId: user.user_id,
+    actionType: 'DELETE',
+    entityType: 'BrandSupplier',
+    entityId: supplier.id, // Changed from supplierId to id
+    oldValue: supplier,
+  });
 
-    const result = await this.brandSupplierRepository.delete(id);
+  const result = await this.brandSupplierRepository.delete(id);
 
-    if (result.affected === 0) {
-      throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
-    }
+  if (result.affected === 0) {
+    throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
   }
+}
 }

@@ -20,7 +20,7 @@ export class BrandSuppliersController {
     description: 'Obtiene todos los proveedores con opción de filtrar por marca y estado' 
   })
   @ApiQuery({ 
-    name: 'brandId', 
+    name: 'brand_id', 
     required: false, 
     type: Number,
     description: 'ID de la marca para filtrar proveedores',
