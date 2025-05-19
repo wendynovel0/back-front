@@ -8,6 +8,7 @@ import { AuthModule } from '../auth/auth.module';
 import { LogsModule } from '../action-logs/action-logs.module';
 import { User } from '../users/entities/user.entity';
 import { ActionLog } from '../action-logs/entities/action-log.entity';
+import { ProductView } from './entities/product-view.entity';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { ActionLog } from '../action-logs/entities/action-log.entity';
       Product,
       Brand,
       User,
-      ActionLog
+      ActionLog,
+      ProductView
     ]),
     
     // Importar módulos requeridos
