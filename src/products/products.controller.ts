@@ -129,27 +129,40 @@ export class ProductsController {
     }
   })
   async findAll(
-    @Query('search') search: string,
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
-    @Query('isActive') isActive: boolean,
-    @Query('brandIds') brandIds: string,
-    @CurrentUser() user: User
-  ) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o no proporcionado');
-    }
-
-    const brandIdsArray = brandIds ? brandIds.split(',').map(id => parseInt(id.trim())) : undefined;
-    
-    return this.productsService.findAll({
-      search,
-      startDate,
-      endDate,
-      isActive,
-      brandIds: brandIdsArray
-    });
+  @Query('search') search: string,
+  @Query('startDate') startDate: string,
+  @Query('endDate') endDate: string,
+  @Query('date') date: string,
+  @Query('filterBy') filterBy: 'created' | 'updated',
+  @Query('isActive') isActive: string,
+  @Query('brandIds') brandIds: string,
+  @CurrentUser() user: User
+) {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o no proporcionado');
   }
+
+  const brandIdsArray = brandIds ? brandIds.split(',').map(id => parseInt(id.trim())) : undefined;
+
+  // Convertir isActive a boolean si viene como string
+  const isActiveBoolean = typeof isActive === 'string'
+    ? isActive.toLowerCase() === 'true'
+      ? true
+      : isActive.toLowerCase() === 'false'
+        ? false
+        : undefined
+    : undefined;
+
+  return this.productsService.findAll({
+    search,
+    startDate,
+    endDate,
+    date,
+    filterBy,
+    isActive: isActiveBoolean,
+    brandIds: brandIdsArray
+  });
+}
 
   @Post()
   @ApiOperation({ 
