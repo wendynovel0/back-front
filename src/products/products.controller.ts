@@ -60,24 +60,28 @@ export class ProductsController {
   description: 'No autorizado - Token inválido o no proporcionado'
 })
 async findAll(
-  @Query('search') search?: string,
-  @Query('startDate') startDate?: string,
-  @Query('endDate') endDate?: string,
-  @Query('isActive') isActive?: string,
-  @Query('brandIds') brandIds?: string,
-  @CurrentUser() user?: User
+  @Query('search') search: string,
+  @Query('createdStartDate') createdStartDate: string,
+  @Query('createdEndDate') createdEndDate: string,
+  @Query('updatedStartDate') updatedStartDate: string,
+  @Query('updatedEndDate') updatedEndDate: string,
+  @Query('isActive') isActive: string,
+  @Query('brandIds') brandIds: string,
+  @Query('supplierIds') supplierIds: string,
+  @CurrentUser() user: User
+
 ) {
   if (!user) {
     throw new UnauthorizedException('Token inválido o no proporcionado');
   }
 
   // Validación básica de fechas
-  if ((startDate && !endDate) || (!startDate && endDate)) {
+  if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
     throw new BadRequestException('Debe proporcionar ambas fechas: startDate y endDate');
   }
-  if (startDate && endDate) {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+  if (createdStartDate && createdEndDate) {
+    const start = new Date(createdStartDate);
+    const end = new Date(createdEndDate);
     const now = new Date();
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
@@ -92,19 +96,27 @@ async findAll(
   }
 
   const brandIdsArray = brandIds ? brandIds.split(',').map(id => parseInt(id.trim())) : undefined;
+const supplierIdsArray = supplierIds ? supplierIds.split(',').map(id => parseInt(id.trim())) : undefined;
 
-  // Convertir isActive a boolean
-  const isActiveBoolean = isActive === undefined
-    ? undefined
-    : isActive.toLowerCase() === 'true';
+const isActiveBoolean = typeof isActive === 'string'
+  ? isActive.toLowerCase() === 'true'
+    ? true
+    : isActive.toLowerCase() === 'false'
+      ? false
+      : undefined
+  : undefined;
 
-  return this.productsService.findAll({
-    search,
-    startDate,
-    endDate,
-    isActive: isActiveBoolean,
-    brandIds: brandIdsArray
-  });
+return this.productsService.findAll({
+  search,
+  createdStartDate,
+  createdEndDate,
+  updatedStartDate,
+  updatedEndDate,
+  isActive: isActiveBoolean,
+  brandIds: brandIdsArray,
+  supplierIds: supplierIdsArray
+});
+
 }
 
 
