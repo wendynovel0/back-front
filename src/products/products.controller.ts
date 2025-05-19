@@ -23,19 +23,31 @@ export class ProductsController {
 @ApiQuery({ 
   name: 'search', 
   required: false, 
-  description: 'Texto para buscar en código, nombre o descripción de producto o nombre de marca',
+  description: 'Texto para buscar en código, nombre o descripción de producto o nombre de marca o proveedor',
   example: 'iPhone'
 })
 @ApiQuery({ 
-  name: 'startDate', 
+  name: 'createdStartDate', 
   required: false, 
-  description: 'Fecha inicial para filtrar por creación o edición (formato YYYY-MM-DD)',
+  description: 'Fecha inicial de creación (formato YYYY-MM-DD)',
   example: '2023-01-01'
 })
 @ApiQuery({ 
-  name: 'endDate', 
+  name: 'createdEndDate', 
   required: false, 
-  description: 'Fecha final para filtrar por creación o edición (formato YYYY-MM-DD)',
+  description: 'Fecha final de creación (formato YYYY-MM-DD)',
+  example: '2023-12-31'
+})
+@ApiQuery({ 
+  name: 'updatedStartDate', 
+  required: false, 
+  description: 'Fecha inicial de actualización (formato YYYY-MM-DD)',
+  example: '2023-01-01'
+})
+@ApiQuery({ 
+  name: 'updatedEndDate', 
+  required: false, 
+  description: 'Fecha final de actualización (formato YYYY-MM-DD)',
   example: '2023-12-31'
 })
 @ApiQuery({ 
@@ -49,6 +61,12 @@ export class ProductsController {
   required: false, 
   description: 'IDs de marcas separados por comas',
   example: '1,2,3'
+})
+@ApiQuery({ 
+  name: 'supplierIds', 
+  required: false, 
+  description: 'IDs de proveedores separados por comas',
+  example: '5,9'
 })
 @ApiResponse({
   status: 200,
@@ -69,56 +87,73 @@ async findAll(
   @Query('brandIds') brandIds: string,
   @Query('supplierIds') supplierIds: string,
   @CurrentUser() user: User
-
 ) {
   if (!user) {
     throw new UnauthorizedException('Token inválido o no proporcionado');
   }
 
-  // Validación básica de fechas
+  const now = new Date();
+
+  // Validación fechas de creación
   if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
-    throw new BadRequestException('Debe proporcionar ambas fechas: startDate y endDate');
+    throw new BadRequestException('Debe proporcionar ambas fechas de creación: createdStartDate y createdEndDate');
   }
   if (createdStartDate && createdEndDate) {
     const start = new Date(createdStartDate);
     const end = new Date(createdEndDate);
-    const now = new Date();
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new BadRequestException('Fechas inválidas, formato esperado YYYY-MM-DD');
+      throw new BadRequestException('Fechas de creación inválidas, formato esperado YYYY-MM-DD');
     }
     if (start > end) {
-      throw new BadRequestException('startDate no puede ser mayor que endDate');
+      throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
     }
     if (end > now) {
-      throw new BadRequestException('endDate no puede ser una fecha futura');
+      throw new BadRequestException('createdEndDate no puede ser una fecha futura');
+    }
+  }
+
+  // Validación fechas de actualización
+  if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
+    throw new BadRequestException('Debe proporcionar ambas fechas de actualización: updatedStartDate y updatedEndDate');
+  }
+  if (updatedStartDate && updatedEndDate) {
+    const start = new Date(updatedStartDate);
+    const end = new Date(updatedEndDate);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Fechas de actualización inválidas, formato esperado YYYY-MM-DD');
+    }
+    if (start > end) {
+      throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
+    }
+    if (end > now) {
+      throw new BadRequestException('updatedEndDate no puede ser una fecha futura');
     }
   }
 
   const brandIdsArray = brandIds ? brandIds.split(',').map(id => parseInt(id.trim())) : undefined;
-const supplierIdsArray = supplierIds ? supplierIds.split(',').map(id => parseInt(id.trim())) : undefined;
+  const supplierIdsArray = supplierIds ? supplierIds.split(',').map(id => parseInt(id.trim())) : undefined;
 
-const isActiveBoolean = typeof isActive === 'string'
-  ? isActive.toLowerCase() === 'true'
-    ? true
-    : isActive.toLowerCase() === 'false'
-      ? false
-      : undefined
-  : undefined;
+  const isActiveBoolean = typeof isActive === 'string'
+    ? isActive.toLowerCase() === 'true'
+      ? true
+      : isActive.toLowerCase() === 'false'
+        ? false
+        : undefined
+    : undefined;
 
-return this.productsService.findAll({
-  search,
-  createdStartDate,
-  createdEndDate,
-  updatedStartDate,
-  updatedEndDate,
-  isActive: isActiveBoolean,
-  brandIds: brandIdsArray,
-  supplierIds: supplierIdsArray
-});
-
+  return this.productsService.findAll({
+    search,
+    createdStartDate,
+    createdEndDate,
+    updatedStartDate,
+    updatedEndDate,
+    isActive: isActiveBoolean,
+    brandIds: brandIdsArray,
+    supplierIds: supplierIdsArray
+  });
 }
-
 
   @Post()
   @ApiOperation({ 
