@@ -41,7 +41,4 @@ export class ActionLog {
     default: () => 'CURRENT_DATE',
   })
   actionTimestamp: Date;
-
-  @Column({ name: 'ip_address', length: 45, nullable: true })
-  ipAddress: string;
 }

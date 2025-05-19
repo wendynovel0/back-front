@@ -39,7 +39,6 @@ export class ActionLogsService {
     recordId: logData.entityId,
     oldValues: logData.oldValue,
     newValues: logData.newValue,
-    ipAddress: logData.ipAddress,
   });
 
   return this.actionLogRepository.save(log);
@@ -103,7 +102,6 @@ const mapped = data.map(log => ({
   old_values: typeof log.oldValues === 'string' ? JSON.parse(log.oldValues) : log.oldValues,
   new_values: typeof log.newValues === 'string' ? JSON.parse(log.newValues) : log.newValues,
   action_timestamp: log.actionTimestamp,
-  ip_address: log.ipAddress,
 }));
 
 
