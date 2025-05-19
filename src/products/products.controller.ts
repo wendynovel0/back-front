@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards, UnauthorizedException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -16,153 +16,97 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @Get()
-  @ApiOperation({ 
-    summary: 'Buscar productos con filtros combinados',
-    description: 'Permite buscar productos por múltiples criterios. Todos los parámetros son opcionales.'
-  })
-  @ApiQuery({ 
-    name: 'search', 
-    required: false, 
-    description: 'Texto para buscar en código, nombre o descripción de producto o nombre de marca',
-    example: 'iPhone'
-  })
-  @ApiQuery({ 
-    name: 'startDate', 
-    required: false, 
-    description: 'Fecha de creación inicial (formato YYYY-MM-DD)',
-    example: '2023-01-01'
-  })
-  @ApiQuery({ 
-    name: 'endDate', 
-    required: false, 
-    description: 'Fecha de creación final (formato YYYY-MM-DD)',
-    example: '2023-12-31'
-  })
-  @ApiQuery({ 
-    name: 'isActive', 
-    required: false, 
-    description: 'Filtrar por estado activo (true) o inactivo (false)',
-    example: true
-  })
-  @ApiQuery({ 
-    name: 'brandIds', 
-    required: false, 
-    description: 'IDs de marcas separados por comas',
-    example: '1,2,3'
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista de productos encontrados',
-    type: [Product],
-    examples: {
-      'Productos con marcas': {
-        summary: 'Ejemplo con información de marca',
-        value: [
-          {
-            product_id: 1,
-            code: "IP13-128",
-            name: "iPhone 13 128GB",
-            description: "Smartphone con chip A15 Bionic",
-            price: 17999,
-            brand_id: 1,
-            is_active: true,
-            created_at: "2023-01-01",
-            updated_at: "2023-01-01",
-            brand: {
-              brand_id: 1,
-              name: "Apple",
-              description: "Empresa líder en tecnología",
-              is_active: true,
-              created_at: "2023-01-01",
-              updated_at: "2023-01-01"
-            }
-          }
-        ]
-      },
-      'Productos sin marca': {
-        summary: 'Ejemplo sin información de marca',
-        value: [
-          {
-            product_id: 2,
-            code: "GAL-S21",
-            name: "Samsung Galaxy S21",
-            description: "Smartphone Android flagship",
-            price: 15999,
-            brand_id: 2,
-            is_active: true,
-            created_at: "2023-01-15",
-            updated_at: "2023-01-15",
-            brand: null
-          }
-        ]
-      },
-      'Productos inactivos': {
-        summary: 'Ejemplo de productos inactivos',
-        value: [
-          {
-            product_id: 3,
-            code: "PIX-4A",
-            name: "Google Pixel 4a",
-            description: "Smartphone Android de gama media",
-            price: 12999,
-            brand_id: 3,
-            is_active: false,
-            created_at: "2022-11-20",
-            updated_at: "2023-06-01"
-          }
-        ]
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'No autorizado - Token inválido o no proporcionado',
-    examples: {
-      'Token inválido': {
-        summary: 'Error de autenticación',
-        value: {
-          statusCode: 401,
-          message: 'Token inválido o no proporcionado',
-          error: 'Unauthorized'
-        }
-      }
-    }
-  })
-  async findAll(
-  @Query('search') search: string,
-  @Query('startDate') startDate: string,
-  @Query('endDate') endDate: string,
-  @Query('date') date: string,
-  @Query('filterBy') filterBy: 'created' | 'updated',
-  @Query('isActive') isActive: string,
-  @Query('brandIds') brandIds: string,
-  @CurrentUser() user: User
+@ApiOperation({ 
+  summary: 'Buscar productos con filtros combinados',
+  description: 'Permite buscar productos por múltiples criterios. Todos los parámetros son opcionales.'
+})
+@ApiQuery({ 
+  name: 'search', 
+  required: false, 
+  description: 'Texto para buscar en código, nombre o descripción de producto o nombre de marca',
+  example: 'iPhone'
+})
+@ApiQuery({ 
+  name: 'startDate', 
+  required: false, 
+  description: 'Fecha inicial para filtrar por creación o edición (formato YYYY-MM-DD)',
+  example: '2023-01-01'
+})
+@ApiQuery({ 
+  name: 'endDate', 
+  required: false, 
+  description: 'Fecha final para filtrar por creación o edición (formato YYYY-MM-DD)',
+  example: '2023-12-31'
+})
+@ApiQuery({ 
+  name: 'isActive', 
+  required: false, 
+  description: 'Filtrar por estado activo (true) o inactivo (false)',
+  example: true
+})
+@ApiQuery({ 
+  name: 'brandIds', 
+  required: false, 
+  description: 'IDs de marcas separados por comas',
+  example: '1,2,3'
+})
+@ApiResponse({
+  status: 200,
+  description: 'Lista de productos encontrados',
+  type: [Product]
+})
+@ApiResponse({ 
+  status: 401, 
+  description: 'No autorizado - Token inválido o no proporcionado'
+})
+async findAll(
+  @Query('search') search?: string,
+  @Query('startDate') startDate?: string,
+  @Query('endDate') endDate?: string,
+  @Query('isActive') isActive?: string,
+  @Query('brandIds') brandIds?: string,
+  @CurrentUser() user?: User
 ) {
   if (!user) {
     throw new UnauthorizedException('Token inválido o no proporcionado');
   }
 
+  // Validación básica de fechas
+  if ((startDate && !endDate) || (!startDate && endDate)) {
+    throw new BadRequestException('Debe proporcionar ambas fechas: startDate y endDate');
+  }
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const now = new Date();
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Fechas inválidas, formato esperado YYYY-MM-DD');
+    }
+    if (start > end) {
+      throw new BadRequestException('startDate no puede ser mayor que endDate');
+    }
+    if (end > now) {
+      throw new BadRequestException('endDate no puede ser una fecha futura');
+    }
+  }
+
   const brandIdsArray = brandIds ? brandIds.split(',').map(id => parseInt(id.trim())) : undefined;
 
-  // Convertir isActive a boolean si viene como string
-  const isActiveBoolean = typeof isActive === 'string'
-    ? isActive.toLowerCase() === 'true'
-      ? true
-      : isActive.toLowerCase() === 'false'
-        ? false
-        : undefined
-    : undefined;
+  // Convertir isActive a boolean
+  const isActiveBoolean = isActive === undefined
+    ? undefined
+    : isActive.toLowerCase() === 'true';
 
   return this.productsService.findAll({
     search,
     startDate,
     endDate,
-    date,
-    filterBy,
     isActive: isActiveBoolean,
     brandIds: brandIdsArray
   });
 }
+
 
   @Post()
   @ApiOperation({ 
