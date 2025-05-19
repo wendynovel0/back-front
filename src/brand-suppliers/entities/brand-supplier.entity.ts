@@ -38,13 +38,4 @@ export class BrandSupplier {
 
   @Column({ name: 'brand_id' })
   brandId: number;
-
-  // Add these if you need user tracking
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by' })
-  createdBy: User;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'updated_by' })
-  updatedBy: User;
 }
