@@ -39,43 +39,43 @@ export class ProductsService {
     return brand;
   }
 
-  async searchProducts(filters: ProductSearchDto): Promise<Product[]> {
-    const where: any = {};
-    const relations = ['brand'];
+//   async searchProducts(filters: ProductSearchDto): Promise<Product[]> {
+//     const where: any = {};
+//     const relations = ['brand'];
 
-    // Filtro de búsqueda general
-    if (filters.searchTerm) {
-      where.name = Like(`%${filters.searchTerm}%`);
-      where.code = Like(`%${filters.searchTerm}%`);
-      where.description = Like(`%${filters.searchTerm}%`);
-    }
+//     // Filtro de búsqueda general
+//     if (filters.searchTerm) {
+//       where.name = Like(`%${filters.searchTerm}%`);
+//       where.code = Like(`%${filters.searchTerm}%`);
+//       where.description = Like(`%${filters.searchTerm}%`);
+//     }
 
-    // Filtro por fechas de creación (convertimos strings a Date)
-    if (filters.creationStartDate && filters.creationEndDate) {
-      where.createdAt = Between(
-        new Date(filters.creationStartDate),
-        new Date(filters.creationEndDate)
-      );
-    } else if (filters.creationStartDate) {
-      where.createdAt = new Date(filters.creationStartDate);
-    }
+//     // Filtro por fechas de creación (convertimos strings a Date)
+//     if (filters.creationStartDate && filters.creationEndDate) {
+//       where.createdAt = Between(
+//         new Date(filters.creationStartDate),
+//         new Date(filters.creationEndDate)
+//       );
+//     } else if (filters.creationStartDate) {
+//       where.createdAt = new Date(filters.creationStartDate);
+//     }
 
-    // Filtro por estado activo/inactivo
-    if (typeof filters.isActive !== 'undefined') {
-      where.isActive = filters.isActive;
-    }
+//     // Filtro por estado activo/inactivo
+//     if (typeof filters.isActive !== 'undefined') {
+//       where.isActive = filters.isActive;
+//     }
 
-    // Filtro por marcas
-    if (filters.brandIds && filters.brandIds.length > 0) {
-      where.brand = { id: In(filters.brandIds) };
-    }
+//     // Filtro por marcas
+//     if (filters.brandIds && filters.brandIds.length > 0) {
+//       where.brand = { id: In(filters.brandIds) };
+//     }
 
-    return this.productRepository.find({
-      where,
-      relations,
-      order: { createdAt: 'DESC' }
-    });
-}
+//     return this.productRepository.find({
+//       where,
+//       relations,
+//       order: { createdAt: 'DESC' }
+//     });
+// }
 
   async findAll(filters: {
   search?: string;
