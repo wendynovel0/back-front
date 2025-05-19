@@ -84,6 +84,7 @@ export class ProductsService {
   brandIds?: number[];
   date?: string;
   filterBy?: 'created' | 'updated'; // 'created' por defecto
+  isActive?: boolean;
 }) {
   const query = this.productViewRepository.createQueryBuilder('product');
 
