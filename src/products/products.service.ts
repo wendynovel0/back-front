@@ -9,6 +9,7 @@ import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
 import { Brand } from '../brands/entities/brand.entity';
 import { ProductSearchDto } from './dto/product-search.dto';
+import { ProductView } from './entities/product-view.entity';
 
 @Injectable()
 export class ProductsService {
@@ -18,6 +19,8 @@ export class ProductsService {
     @InjectRepository(Brand)
     private brandRepository: Repository<Brand>,
     private actionLogsService: ActionLogsService,
+    @InjectRepository(ProductView)
+    private productViewRepository: Repository<ProductView>,
   ) {}
 
   private async validateBrand(brandId: number): Promise<Brand> {
@@ -78,42 +81,60 @@ export class ProductsService {
   search?: string;
   startDate?: string;
   endDate?: string;
-  isActive?: boolean;
   brandIds?: number[];
   date?: string;
+  filterBy?: 'created' | 'updated'; // 'created' por defecto
 }) {
-  const query = this.productRepository.createQueryBuilder('product')
-    .leftJoinAndSelect('product.brand', 'brand');
+  const query = this.productViewRepository.createQueryBuilder('product');
 
+  // --- Validación de fechas ---
+  const today = new Date();
+  const dateField = filters.filterBy === 'updated' ? 'product.updatedAt' : 'product.createdAt';
+
+  if (filters.date) {
+    const filterDate = new Date(filters.date);
+    if (filterDate > today) {
+      throw new BadRequestException('No se puede buscar en fechas futuras.');
+    }
+    query.andWhere(`DATE(${dateField}) = :date`, { date: filters.date });
+  } else {
+    if (!filters.startDate || !filters.endDate) {
+      throw new BadRequestException('Debe especificar tanto fecha de inicio como de fin.');
+    }
+
+    const startDate = new Date(filters.startDate);
+    const endDate = new Date(filters.endDate);
+
+    if (startDate > endDate) {
+      throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha de fin.');
+    }
+
+    if (startDate > today || endDate > today) {
+      throw new BadRequestException('No se puede buscar en periodos futuros.');
+    }
+
+    query.andWhere(`DATE(${dateField}) BETWEEN :startDate AND :endDate`, {
+      startDate: filters.startDate,
+      endDate: filters.endDate,
+    });
+  }
+
+  // --- Búsqueda general ---
   if (filters.search) {
     query.andWhere(
-      `(product.code ILIKE :search OR product.name ILIKE :search OR product.description ILIKE :search OR brand.name ILIKE :search)`,
+      `(product.code ILIKE :search OR product.name ILIKE :search OR product.description ILIKE :search OR product.brandName ILIKE :search OR product.supplierName ILIKE :search)`,
       { search: `%${filters.search}%` }
     );
   }
 
-  if (filters.date) {
-    query.andWhere('DATE(product.created_at) = :date', { date: filters.date });
-  } else {
-    if (filters.startDate) {
-      query.andWhere('DATE(product.created_at) >= :startDate', { startDate: filters.startDate });
-    }
-
-    if (filters.endDate) {
-      query.andWhere('DATE(product.created_at) <= :endDate', { endDate: filters.endDate });
-    }
-  }
-
-  if (filters.isActive !== undefined) {
-    query.andWhere('product.is_active = :isActive', { isActive: filters.isActive });
-  }
-
+  // --- Filtro por marca ---
   if (filters.brandIds && filters.brandIds.length > 0) {
-    query.andWhere('product.brand_id IN (:...brandIds)', { brandIds: filters.brandIds });
+    query.andWhere('product.brandId IN (:...brandIds)', { brandIds: filters.brandIds });
   }
 
   return query.getMany();
 }
+
 
   async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({ 
