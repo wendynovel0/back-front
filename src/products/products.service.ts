@@ -79,48 +79,64 @@ export class ProductsService {
 
   async findAll(filters: {
   search?: string;
-  startDate?: string;
-  endDate?: string;
-  brandIds?: number[];
-  date?: string;
-  filterBy?: 'created' | 'updated'; // 'created' por defecto
+  createdStartDate?: string;
+  createdEndDate?: string;
+  updatedStartDate?: string;
+  updatedEndDate?: string;
   isActive?: boolean;
+  brandIds?: number[];
+  supplierIds?: number[];
 }) {
   const query = this.productViewRepository.createQueryBuilder('product');
-
-  // --- Validación de fechas ---
   const today = new Date();
-  const dateField = filters.filterBy === 'updated' ? 'product.updatedAt' : 'product.createdAt';
 
-  if (filters.date) {
-    const filterDate = new Date(filters.date);
-    if (filterDate > today) {
-      throw new BadRequestException('No se puede buscar en fechas futuras.');
-    }
-    query.andWhere(`DATE(${dateField}) = :date`, { date: filters.date });
-  } else {
-    if (!filters.startDate || !filters.endDate) {
-      throw new BadRequestException('Debe especificar tanto fecha de inicio como de fin.');
+  // Validación y filtro por fecha de creación
+  if (filters.createdStartDate || filters.createdEndDate) {
+    if (!filters.createdStartDate || !filters.createdEndDate) {
+      throw new BadRequestException('Debe especificar tanto fecha de inicio como de fin para la búsqueda por creación.');
     }
 
-    const startDate = new Date(filters.startDate);
-    const endDate = new Date(filters.endDate);
+    const createdStart = new Date(filters.createdStartDate);
+    const createdEnd = new Date(filters.createdEndDate);
 
-    if (startDate > endDate) {
-      throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha de fin.');
+    if (createdStart > createdEnd) {
+      throw new BadRequestException('La fecha de inicio de creación no puede ser mayor que la fecha de fin.');
     }
 
-    if (startDate > today || endDate > today) {
-      throw new BadRequestException('No se puede buscar en periodos futuros.');
+    if (createdStart > today || createdEnd > today) {
+      throw new BadRequestException('No se puede buscar productos creados en el futuro.');
     }
 
-    query.andWhere(`DATE(${dateField}) BETWEEN :startDate AND :endDate`, {
-      startDate: filters.startDate,
-      endDate: filters.endDate,
+    query.andWhere(`DATE(product.createdAt) BETWEEN :createdStart AND :createdEnd`, {
+      createdStart: filters.createdStartDate,
+      createdEnd: filters.createdEndDate,
     });
   }
 
-  // --- Búsqueda general ---
+  // Validación y filtro por fecha de actualización
+  if (filters.updatedStartDate || filters.updatedEndDate) {
+    if (!filters.updatedStartDate || !filters.updatedEndDate) {
+      throw new BadRequestException('Debe especificar tanto fecha de inicio como de fin para la búsqueda por edición.');
+    }
+
+    const updatedStart = new Date(filters.updatedStartDate);
+    const updatedEnd = new Date(filters.updatedEndDate);
+
+    if (updatedStart > updatedEnd) {
+      throw new BadRequestException('La fecha de inicio de edición no puede ser mayor que la fecha de fin.');
+    }
+
+    if (updatedStart > today || updatedEnd > today) {
+      throw new BadRequestException('No se puede buscar productos editados en el futuro.');
+    }
+
+    query.andWhere(`DATE(product.updatedAt) BETWEEN :updatedStart AND :updatedEnd`, {
+      updatedStart: filters.updatedStartDate,
+      updatedEnd: filters.updatedEndDate,
+    });
+  }
+
+  // Búsqueda general
   if (filters.search) {
     query.andWhere(
       `(product.code ILIKE :search OR product.name ILIKE :search OR product.description ILIKE :search OR product.brandName ILIKE :search OR product.supplierName ILIKE :search)`,
@@ -128,13 +144,24 @@ export class ProductsService {
     );
   }
 
-  // --- Filtro por marca ---
-  if (filters.brandIds && filters.brandIds.length > 0) {
+  // Filtro por estado
+  if (filters.isActive !== undefined) {
+    query.andWhere(`product.isActive = :isActive`, { isActive: filters.isActive });
+  }
+
+  // Filtro por marcas
+  if (filters.brandIds?.length) {
     query.andWhere('product.brandId IN (:...brandIds)', { brandIds: filters.brandIds });
+  }
+
+  // Filtro por proveedores
+  if (filters.supplierIds?.length) {
+    query.andWhere('product.supplierId IN (:...supplierIds)', { supplierIds: filters.supplierIds });
   }
 
   return query.getMany();
 }
+
 
 
   async findOne(id: number): Promise<Product> {
