@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { BrandSupplier } from './entities/brand-supplier.entity';
@@ -13,11 +13,13 @@ export class BrandSuppliersService {
   constructor(
     @InjectRepository(BrandSupplier)
     private readonly brandSupplierRepository: Repository<BrandSupplier>,
+    @InjectRepository(BrandSuppliersView)
+    private readonly brandSuppliersViewRepository: Repository<BrandSuppliersView>,
     private readonly actionLogsService: ActionLogsService,
     private readonly dataSource: DataSource,
   ) {}
 
-  async findAll(params: {
+  async findAll(filters: {
   search?: string;
   createdStartDate?: string;
   createdEndDate?: string;
@@ -31,46 +33,80 @@ export class BrandSuppliersService {
     createdEndDate,
     updatedStartDate,
     updatedEndDate,
-    brandIds,
-  } = params;
+    brandIds
+  } = filters;
 
-  const query = this.dataSource
-    .getRepository(BrandSuppliersView)
-    .createQueryBuilder('supplier')
-    .orderBy('supplier.supplierName', 'ASC');
+  // Validación de fechas de creación
+  if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
+    throw new BadRequestException('Debe proporcionar ambas fechas: createdStartDate y createdEndDate');
+  }
+
+  if (createdStartDate && createdEndDate) {
+    const start = new Date(createdStartDate);
+    const end = new Date(createdEndDate);
+    const now = new Date();
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Fechas inválidas, formato esperado YYYY-MM-DD');
+    }
+    if (start > end) {
+      throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
+    }
+    if (end > now) {
+      throw new BadRequestException('createdEndDate no puede ser una fecha futura');
+    }
+  }
+
+  // Validación de fechas de edición
+  if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
+    throw new BadRequestException('Debe proporcionar ambas fechas: updatedStartDate y updatedEndDate');
+  }
+
+  if (updatedStartDate && updatedEndDate) {
+    const start = new Date(updatedStartDate);
+    const end = new Date(updatedEndDate);
+    const now = new Date();
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Fechas inválidas, formato esperado YYYY-MM-DD');
+    }
+    if (start > end) {
+      throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
+    }
+    if (end > now) {
+      throw new BadRequestException('updatedEndDate no puede ser una fecha futura');
+    }
+  }
+
+  const query = this.brandSuppliersViewRepository
+    .createQueryBuilder('supplier');
 
   if (search) {
     query.andWhere(
-      `(LOWER(supplier.supplierName) LIKE LOWER(:search) OR LOWER(supplier.brandName) LIKE LOWER(:search))`,
-      { search: `%${search}%` },
+      '(LOWER(supplier.supplier_name) LIKE LOWER(:search) OR LOWER(supplier.contact_person) LIKE LOWER(:search) OR LOWER(supplier.email) LIKE LOWER(:search) OR LOWER(supplier.brand_name) LIKE LOWER(:search))',
+      { search: `%${search}%` }
     );
   }
 
   if (createdStartDate && createdEndDate) {
-    query.andWhere(
-      'supplier.createdAt BETWEEN :createdStart AND :createdEnd',
-      {
-        createdStart: createdStartDate,
-        createdEnd: createdEndDate,
-      },
-    );
+    query.andWhere('supplier.created_at BETWEEN :start AND :end', {
+      start: createdStartDate,
+      end: createdEndDate
+    });
   }
 
   if (updatedStartDate && updatedEndDate) {
-    query.andWhere(
-      'supplier.updatedAt BETWEEN :updatedStart AND :updatedEnd',
-      {
-        updatedStart: updatedStartDate,
-        updatedEnd: updatedEndDate,
-      },
-    );
+    query.andWhere('supplier.updated_at BETWEEN :startU AND :endU', {
+      startU: updatedStartDate,
+      endU: updatedEndDate
+    });
   }
 
-  if (brandIds?.length) {
-    query.andWhere('supplier.brandId IN (:...brandIds)', { brandIds });
+  if (brandIds && brandIds.length > 0) {
+    query.andWhere('supplier.brand_id IN (:...brandIds)', { brandIds });
   }
 
-  return query.getMany();
+  return query.orderBy('supplier.supplier_name', 'ASC').getMany();
 }
   
   async findOne(id: number): Promise<BrandSupplier> {
