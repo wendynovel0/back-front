@@ -139,7 +139,7 @@ export class ProductsService {
   // Búsqueda general
   if (filters.search) {
     query.andWhere(
-      `(product.code ILIKE :search OR product.name ILIKE :search OR product.description ILIKE :search OR product.brandName ILIKE :search OR product.supplierName ILIKE :search)`,
+      `(product.code ILIKE :search OR product.product_name ILIKE :search OR product.description ILIKE :search OR product.brandName ILIKE :search OR product.supplierName ILIKE :search)`,
       { search: `%${filters.search}%` }
     );
   }
