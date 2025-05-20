@@ -8,6 +8,8 @@ import {
   Delete,
   UseGuards,
   Ip,
+  Put,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,6 +22,7 @@ import {
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ReplaceUserDto } from './dto/replace-user.dto';
 import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from './entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -59,8 +62,21 @@ export class UserController {
     return this.userService.findOne(+id);
   }
 
+  @Put(':id')
+  @ApiOkResponse({ description: 'Usuario reemplazado completamente (PUT)' })
+  @ApiUnauthorizedResponse({ description: 'No autorizado: token faltante o inválido' })
+  @ApiForbiddenResponse({ description: 'Acceso denegado' })
+  replaceUser(
+    @Param('id') id: string,
+    @Body() replaceUserDto: ReplaceUserDto,
+    @CurrentUser() user: User,
+    @Ip() ip: string,
+  ) {
+    return this.userService.replace(+id, replaceUserDto, user.user_id, ip);
+  }
+
   @Patch(':id')
-  @ApiOkResponse({ description: 'Usuario actualizado correctamente' })
+  @ApiOkResponse({ description: 'Usuario actualizado parcialmente (PATCH)' })
   @ApiUnauthorizedResponse({ description: 'No autorizado: token faltante o inválido' })
   @ApiForbiddenResponse({ description: 'Acceso denegado' })
   update(
