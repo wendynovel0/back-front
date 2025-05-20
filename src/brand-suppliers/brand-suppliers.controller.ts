@@ -6,6 +6,8 @@ import { ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody, ApiQuery, ApiBea
 import { BrandSupplier } from './entities/brand-supplier.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
+import { BrandSuppliersView } from './entities/brand-suppliers-view.entity';
+
 
 @ApiTags('Proveedores de Marcas')
 @Controller('brand-suppliers')
@@ -15,18 +17,72 @@ export class BrandSuppliersController {
   constructor(private readonly brandSuppliersService: BrandSuppliersService) {}
 
 @Get()
-@ApiOperation({ 
-  summary: 'Obtener todos los proveedores', 
-  description: 'Obtiene la lista completa de proveedores de marcas' 
+@ApiOperation({
+  summary: 'Buscar proveedores con filtros combinados',
+  description: 'Permite buscar proveedores por nombre, marca, fechas de creación/edición o marca. Todos los parámetros son opcionales.'
+})
+@ApiQuery({
+  name: 'search',
+  required: false,
+  description: 'Texto para buscar en nombre del proveedor o de la marca',
+  example: 'Samsung'
+})
+@ApiQuery({
+  name: 'createdStartDate',
+  required: false,
+  description: 'Fecha inicial de creación (YYYY-MM-DD)',
+  example: '2023-01-01'
+})
+@ApiQuery({
+  name: 'createdEndDate',
+  required: false,
+  description: 'Fecha final de creación (YYYY-MM-DD)',
+  example: '2023-12-31'
+})
+@ApiQuery({
+  name: 'updatedStartDate',
+  required: false,
+  description: 'Fecha inicial de actualización (YYYY-MM-DD)',
+  example: '2023-01-01'
+})
+@ApiQuery({
+  name: 'updatedEndDate',
+  required: false,
+  description: 'Fecha final de actualización (YYYY-MM-DD)',
+  example: '2023-12-31'
+})
+@ApiQuery({
+  name: 'brandIds',
+  required: false,
+  description: 'IDs de marcas separados por comas',
+  example: '1,2,3'
 })
 @ApiResponse({
   status: 200,
-  description: 'Lista de todos los proveedores',
-  type: BrandSupplier,
+  description: 'Lista de proveedores encontrados',
+  type: BrandSuppliersView,
   isArray: true
 })
-async findAll(): Promise<BrandSupplier[]> {
-  return this.brandSuppliersService.findAll();
+async findAll(
+  @Query('search') search?: string,
+  @Query('createdStartDate') createdStartDate?: string,
+  @Query('createdEndDate') createdEndDate?: string,
+  @Query('updatedStartDate') updatedStartDate?: string,
+  @Query('updatedEndDate') updatedEndDate?: string,
+  @Query('brandIds') brandIds?: string
+): Promise<BrandSuppliersView[]> {
+  const brandIdsArray = brandIds
+    ? brandIds.split(',').map(id => parseInt(id.trim()))
+    : undefined;
+
+  return this.brandSuppliersService.findAll({
+    search,
+    createdStartDate,
+    createdEndDate,
+    updatedStartDate,
+    updatedEndDate,
+    brandIds: brandIdsArray
+  });
 }
 
   @Get(':id')
