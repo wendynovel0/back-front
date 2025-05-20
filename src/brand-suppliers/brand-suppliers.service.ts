@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource } from 'typeorm';
 import { BrandSupplier } from './entities/brand-supplier.entity';
 import { CreateBrandSupplierDto } from './dto/create-brand-supplier.dto';
 import { UpdateBrandSupplierDto } from './dto/update-brand-supplier.dto';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
+import { BrandSuppliersView } from './entities/brand-suppliers-view.entity';
 
 @Injectable()
 export class BrandSuppliersService {
@@ -13,14 +14,65 @@ export class BrandSuppliersService {
     @InjectRepository(BrandSupplier)
     private readonly brandSupplierRepository: Repository<BrandSupplier>,
     private readonly actionLogsService: ActionLogsService,
+    private readonly dataSource: DataSource,
   ) {}
 
-  async findAll(): Promise<BrandSupplier[]> {
-  return this.brandSupplierRepository.find({
-    relations: ['brand'],
-    order: { name: 'ASC' }
-  });
+  async findAll(params: {
+  search?: string;
+  createdStartDate?: string;
+  createdEndDate?: string;
+  updatedStartDate?: string;
+  updatedEndDate?: string;
+  brandIds?: number[];
+}): Promise<BrandSuppliersView[]> {
+  const {
+    search,
+    createdStartDate,
+    createdEndDate,
+    updatedStartDate,
+    updatedEndDate,
+    brandIds,
+  } = params;
+
+  const query = this.dataSource
+    .getRepository(BrandSuppliersView)
+    .createQueryBuilder('supplier')
+    .orderBy('supplier.supplierName', 'ASC');
+
+  if (search) {
+    query.andWhere(
+      `(LOWER(supplier.supplierName) LIKE LOWER(:search) OR LOWER(supplier.brandName) LIKE LOWER(:search))`,
+      { search: `%${search}%` },
+    );
+  }
+
+  if (createdStartDate && createdEndDate) {
+    query.andWhere(
+      'supplier.createdAt BETWEEN :createdStart AND :createdEnd',
+      {
+        createdStart: createdStartDate,
+        createdEnd: createdEndDate,
+      },
+    );
+  }
+
+  if (updatedStartDate && updatedEndDate) {
+    query.andWhere(
+      'supplier.updatedAt BETWEEN :updatedStart AND :updatedEnd',
+      {
+        updatedStart: updatedStartDate,
+        updatedEnd: updatedEndDate,
+      },
+    );
+  }
+
+  if (brandIds?.length) {
+    query.andWhere('supplier.brandId IN (:...brandIds)', { brandIds });
+  }
+
+  return query.getMany();
 }
+  
   async findOne(id: number): Promise<BrandSupplier> {
   const supplier = await this.brandSupplierRepository.findOne({
     where: { id }, // Changed from supplierId to id
