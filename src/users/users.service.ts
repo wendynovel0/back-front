@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ReplaceUserDto } from './dto/replace-user.dto';
 import { User } from './entities/user.entity';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 
@@ -14,13 +15,11 @@ export class UserService {
     private actionLogsService: ActionLogsService,
   ) {}
 
-  //  Sin logs (registro de usuario)
   async create(createUserDto: CreateUserDto): Promise<User> {
     const user = this.userRepository.create(createUserDto);
     return await this.userRepository.save(user);
   }
 
-  //  Con logs (creación por parte de admin u otro)
   async createWithAudit(
     createUserDto: CreateUserDto,
     performedBy: number,
@@ -55,6 +54,38 @@ export class UserService {
     const user = await this.userRepository.findOne({ where: { user_id: id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
+  }
+
+  async replace(
+    id: number,
+    replaceUserDto: ReplaceUserDto,
+    performedBy: number,
+    ip?: string,
+  ): Promise<User> {
+    const user = await this.findOne(id);
+    const oldValue = { ...user };
+
+    if (!replaceUserDto.email || !replaceUserDto.name) {
+      throw new BadRequestException('Email y name son obligatorios en PUT');
+    }
+
+    const newUser = this.userRepository.create({
+      ...user,
+      ...replaceUserDto,
+    });
+    const replacedUser = await this.userRepository.save(newUser);
+
+    await this.actionLogsService.logAction({
+      userId: performedBy,
+      actionType: 'REPLACE',
+      entityType: 'user',
+      entityId: replacedUser.user_id,
+      oldValue,
+      newValue: replacedUser,
+      ipAddress: ip,
+    });
+
+    return replacedUser;
   }
 
   async update(
