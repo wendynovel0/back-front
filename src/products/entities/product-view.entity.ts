@@ -23,6 +23,9 @@ export class ProductView {
   @ViewColumn({ name: 'updated_at' })
   updatedAt: Date;
 
+  @ViewColumn({ name: 'is_active' })
+  isActive: boolean;
+
   @ViewColumn({ name: 'brand_id' })
   brandId: number;
 
