@@ -15,7 +15,7 @@ import { User } from '../users/entities/user.entity';
     LogsModule,
   ],
   controllers: [BrandsController],
-  providers: [BrandsService],
-  exports: [BrandsService],
+  providers: [BrandService],
+  exports: [BrandService],
 })
 export class BrandsModule {}

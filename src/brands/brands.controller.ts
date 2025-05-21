@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
   UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandService } from './brand.service'; // Nombre corregido
@@ -26,6 +27,7 @@ import { Brand } from './entities/brand.entity';
 import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from '../users/entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { BrandsView } from './entities/brands-view.entity';
 
 @ApiTags('Brands')
 @ApiBearerAuth()
@@ -35,138 +37,121 @@ export class BrandsController {
   constructor(private readonly brandsService: BrandService) {} // Nombre corregido
 
   @Get()
-  @ApiOperation({ summary: 'Obtener todas las marcas de TI' })
-  @ApiQuery({
-    name: 'includeInactive',
-    required: false,
-    type: Boolean,
-    description: 'Incluir marcas inactivas',
-    example: false,
-  })
+  @ApiOperation({ summary: 'Obtener marcas con filtros' })
+  @ApiQuery({ name: 'name', required: false, type: String, description: 'Nombre de la marca' })
+  @ApiQuery({ name: 'supplierName', required: false, type: String, description: 'Nombre del proveedor' })
+  @ApiQuery({ name: 'createdStartDate', required: false, type: String, description: 'Fecha inicial de creación (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'createdEndDate', required: false, type: String, description: 'Fecha final de creación (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'updatedStartDate', required: false, type: String, description: 'Fecha inicial de actualización (YYYY-MM-DD)' })
+  @ApiQuery({ name: 'updatedEndDate', required: false, type: String, description: 'Fecha final de actualización (YYYY-MM-DD)' })
   @ApiResponse({
     status: 200,
-    description: 'Lista de marcas de TI',
-    type: [Brand],
-    examples: {
-      'Marcas activas': {
-        summary: 'Ejemplo de respuesta exitosa',
-        value: [
-          {
-            brandId: 1,
-            name: 'Microsoft',
-            description: 'Empresa líder en software y servicios en la nube',
-            isActive: true,
-            createdAt: '2023-01-15',
-            updatedAt: '2023-06-20',
-          },
-          {
-            brandId: 2,
-            name: 'Apple',
-            description: 'Fabricante de hardware y software premium',
-            isActive: true,
-            createdAt: '2023-02-10',
-            updatedAt: '2023-05-15',
-          },
-        ],
-      },
-      'Incluyendo inactivas': {
-        summary: 'Ejemplo con marcas inactivas',
-        value: [
-          {
-            brandId: 3,
-            name: 'BlackBerry',
-            description: 'Antiguo fabricante de smartphones',
-            isActive: false,
-            createdAt: '2023-01-20',
-            updatedAt: '2023-04-30',
-          },
-        ],
-      },
-    },
+    description: 'Lista filtrada de marcas activas',
+    type: [BrandsView],
   })
   @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
   async findAll(
-    @Query('includeInactive') includeInactive?: boolean,
-    @CurrentUser() user: User,
-  ) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o usuario no autenticado');
-    }
-    return this.brandsService.findAll(includeInactive);
-  }
-
-  @Get('search')
-  @ApiOperation({ summary: 'Buscar marcas de TI con filtros avanzados' })
-  @ApiQuery({ name: 'name', required: false, type: String, description: 'Filtrar por nombre (texto parcial)' })
-  @ApiQuery({ name: 'createdStartDate', required: false, type: String, description: 'Fecha inicio creación (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'createdEndDate', required: false, type: String, description: 'Fecha fin creación (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'updatedStartDate', required: false, type: String, description: 'Fecha inicio actualización (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'updatedEndDate', required: false, type: String, description: 'Fecha fin actualización (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Estado activo/inactivo' })
-  @ApiResponse({ status: 200, description: 'Lista filtrada de marcas de TI', type: [Brand] })
-  @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
-  async search(
     @Query('name') name?: string,
+    @Query('supplierName') supplierName?: string,
     @Query('createdStartDate') createdStartDate?: string,
     @Query('createdEndDate') createdEndDate?: string,
     @Query('updatedStartDate') updatedStartDate?: string,
     @Query('updatedEndDate') updatedEndDate?: string,
-    @Query('isActive') isActive?: string,
-    @CurrentUser() user: User,
-  ) {
+    @CurrentUser() user?: User,
+  ): Promise<BrandsView[]> {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
 
-    const parsedIsActive =
-      isActive === 'true' ? true : isActive === 'false' ? false : undefined;
-
-    const filters = {
+    return this.brandsService.findAllWithFilters({
       name,
       createdStartDate,
       createdEndDate,
       updatedStartDate,
       updatedEndDate,
-      isActive: parsedIsActive,
-    };
-
-    return this.brandsService.findAllWithFilters(filters);
+    });
   }
+
+
+  // @Get('search')
+  // @ApiOperation({ summary: 'Buscar marcas de TI con filtros avanzados' })
+  // @ApiQuery({ name: 'name', required: false, type: String, description: 'Filtrar por nombre (texto parcial)' })
+  // @ApiQuery({ name: 'createdStartDate', required: false, type: String, description: 'Fecha inicio creación (YYYY-MM-DD)' })
+  // @ApiQuery({ name: 'createdEndDate', required: false, type: String, description: 'Fecha fin creación (YYYY-MM-DD)' })
+  // @ApiQuery({ name: 'updatedStartDate', required: false, type: String, description: 'Fecha inicio actualización (YYYY-MM-DD)' })
+  // @ApiQuery({ name: 'updatedEndDate', required: false, type: String, description: 'Fecha fin actualización (YYYY-MM-DD)' })
+  // @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Estado activo/inactivo' })
+  // @ApiResponse({ status: 200, description: 'Lista filtrada de marcas de TI', type: [Brand] })
+  // @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
+  // async search(
+  //   @Query('name') name?: string,
+  //   @Query('createdStartDate') createdStartDate?: string,
+  //   @Query('createdEndDate') createdEndDate?: string,
+  //   @Query('updatedStartDate') updatedStartDate?: string,
+  //   @Query('updatedEndDate') updatedEndDate?: string,
+  //   @Query('isActive') isActive?: string,
+  //   @CurrentUser() user: User,
+  // ) {
+  //   if (!user) {
+  //     throw new UnauthorizedException('Token inválido o usuario no autenticado');
+  //   }
+
+  //   const parsedIsActive =
+  //     isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+
+  //   const filters = {
+  //     name,
+  //     createdStartDate,
+  //     createdEndDate,
+  //     updatedStartDate,
+  //     updatedEndDate,
+  //     isActive: parsedIsActive,
+  //   };
+
+  //   return this.brandsService.findAllWithFilters(filters);
+  // }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener una marca de TI por ID' })
-  @ApiParam({
-    name: 'id',
-    type: Number,
-    description: 'ID de la marca',
-    example: 1,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Marca de TI encontrada',
-    type: Brand,
-    examples: {
-      'Marca encontrada': {
-        summary: 'Ejemplo de marca existente',
-        value: {
-          brandId: 1,
-          name: 'Microsoft',
-          description: 'Empresa líder en software y servicios en la nube',
-          isActive: true,
-          createdAt: '2023-01-15',
-          updatedAt: '2023-06-20',
-        },
+@ApiOperation({ summary: 'Obtener una marca de TI por ID' })
+@ApiParam({
+  name: 'id',
+  type: Number,
+  description: 'ID de la marca',
+  example: 1,
+})
+@ApiResponse({
+  status: 200,
+  description: 'Marca de TI encontrada',
+  type: Brand,
+  examples: {
+    'Marca encontrada': {
+      summary: 'Ejemplo de marca existente',
+      value: {
+        id: 1,
+        name: 'Microsoft',
+        description: 'Empresa líder en software y servicios en la nube',
+        isActive: true,
+        createdAt: '2023-01-15',
+        updatedAt: '2023-06-20',
       },
     },
-  })
-  @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
-  @ApiResponse({ status: 404, description: 'Marca no encontrada' })
-  async findOne(@Param('id') id: string, @CurrentUser() user: User) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o usuario no autenticado');
-    }
-    return this.brandsService.findOne(+id);
+  },
+})
+@ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
+@ApiResponse({ status: 404, description: 'Marca no encontrada' })
+async findOne(@Param('id') id: string, @CurrentUser() user: User) {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
+
+  const brand = await this.brandsService.findOne(+id);
+  if (!brand) {
+    throw new NotFoundException('Marca no encontrada');
+  }
+
+  return brand;
+}
+
 
   @Post()
   @ApiOperation({ summary: 'Crear nueva marca de TI' })
@@ -221,7 +206,7 @@ export class BrandsController {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
-    return this.brandsService.create(createBrandDto, user.id);
+    return this.brandsService.create(createBrandDto, user.user_id);
   }
 
   @Put(':id')
@@ -261,7 +246,7 @@ export class BrandsController {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
-    return this.brandsService.update(+id, updateBrandDto, user.id);
+    return this.brandsService.update(+id, updateBrandDto, user.user_id);
   }
 
   @Delete(':id')
@@ -296,7 +281,7 @@ export class BrandsController {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
-    return this.brandsService.deactivate(+id, user.id);
+    return this.brandsService.deactivate(+id, user.user_id);
   }
 
   @Patch(':id/activate')
@@ -331,6 +316,6 @@ export class BrandsController {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
-    return this.brandsService.activate(+id, user.id);
+    return this.brandsService.activate(+id, user.user_id);
   }
 }
