@@ -167,7 +167,7 @@ export class UserService {
   updatedStartDate?: string;
   updatedEndDate?: string;
   isActive?: boolean;
-}): Promise<User[]> {
+}): Promise<UsersView[]> {
   const query = this.usersViewRepository.createQueryBuilder('user');
 
   if (filters.email) {
