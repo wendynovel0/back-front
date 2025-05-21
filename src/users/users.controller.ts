@@ -9,6 +9,9 @@ import {
   UseGuards,
   Ip,
   Put,
+  Query,
+  BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -17,6 +20,9 @@ import {
   ApiBearerAuth,
   ApiUnauthorizedResponse,
   ApiForbiddenResponse,
+  ApiOperation,
+  ApiQuery,
+  ApiResponse,
 } from '@nestjs/swagger';
 import { UserService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,7 +30,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
 import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from './entities/user.entity';
-import { UsersView } from './entities/users-view.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Users')
@@ -33,7 +38,6 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
-  
 
   @Post()
   @ApiCreatedResponse({ type: User, description: 'Usuario creado exitosamente' })
@@ -48,11 +52,83 @@ export class UserController {
   }
 
   @Get()
-  @ApiOkResponse({ type: [User], description: 'Lista de usuarios obtenida' })
-  @ApiUnauthorizedResponse({ description: 'No autorizado: token faltante o inválido' })
-  @ApiForbiddenResponse({ description: 'Acceso denegado' })
-  findAll() {
-    return this.userService.findAll();
+  @ApiOperation({
+    summary: 'Buscar usuarios con filtros combinados',
+    description: 'Permite buscar usuarios por múltiples criterios. Todos los parámetros son opcionales.',
+  })
+  @ApiQuery({ name: 'search', required: false, description: 'Texto para buscar en email, nombre o apellido', example: 'john' })
+  @ApiQuery({ name: 'createdStartDate', required: false, description: 'Fecha inicial de creación (YYYY-MM-DD)', example: '2023-01-01' })
+  @ApiQuery({ name: 'createdEndDate', required: false, description: 'Fecha final de creación (YYYY-MM-DD)', example: '2023-12-31' })
+  @ApiQuery({ name: 'updatedStartDate', required: false, description: 'Fecha inicial de actualización (YYYY-MM-DD)', example: '2023-01-01' })
+  @ApiQuery({ name: 'updatedEndDate', required: false, description: 'Fecha final de actualización (YYYY-MM-DD)', example: '2023-12-31' })
+  @ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true) o inactivo (false)', example: true })
+  @ApiResponse({ status: 200, description: 'Lista de usuarios encontrados', type: [User] })
+  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido o no proporcionado' })
+  async findAllWithFilters(
+    @Query('search') search: string,
+    @Query('createdStartDate') createdStartDate: string,
+    @Query('createdEndDate') createdEndDate: string,
+    @Query('updatedStartDate') updatedStartDate: string,
+    @Query('updatedEndDate') updatedEndDate: string,
+    @Query('isActive') isActive: string,
+    @CurrentUser() user: User,
+  ) {
+    if (!user) {
+      throw new UnauthorizedException('Token inválido o no proporcionado');
+    }
+
+    const now = new Date();
+
+    if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
+      throw new BadRequestException('Debe proporcionar ambas fechas de creación: createdStartDate y createdEndDate');
+    }
+    if (createdStartDate && createdEndDate) {
+      const start = new Date(createdStartDate);
+      const end = new Date(createdEndDate);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new BadRequestException('Fechas de creación inválidas, formato esperado YYYY-MM-DD');
+      }
+      if (start > end) {
+        throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
+      }
+      if (end > now) {
+        throw new BadRequestException('createdEndDate no puede ser una fecha futura');
+      }
+    }
+
+    if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
+      throw new BadRequestException('Debe proporcionar ambas fechas de actualización: updatedStartDate y updatedEndDate');
+    }
+    if (updatedStartDate && updatedEndDate) {
+      const start = new Date(updatedStartDate);
+      const end = new Date(updatedEndDate);
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        throw new BadRequestException('Fechas de actualización inválidas, formato esperado YYYY-MM-DD');
+      }
+      if (start > end) {
+        throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
+      }
+      if (end > now) {
+        throw new BadRequestException('updatedEndDate no puede ser una fecha futura');
+      }
+    }
+
+    const isActiveBoolean = typeof isActive === 'string'
+      ? isActive.toLowerCase() === 'true'
+        ? true
+        : isActive.toLowerCase() === 'false'
+          ? false
+          : undefined
+      : undefined;
+
+    return this.userService.findAllWithFilters({
+      search,
+      createdStartDate,
+      createdEndDate,
+      updatedStartDate,
+      updatedEndDate,
+      isActive: isActiveBoolean,
+    });
   }
 
   @Get(':id')

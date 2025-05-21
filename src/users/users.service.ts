@@ -4,7 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between, Like } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -52,6 +52,47 @@ export class UserService {
     return this.userRepository.find();
   }
 
+  async findAllWithFilters(filters: {
+    search?: string;
+    createdStartDate?: string;
+    createdEndDate?: string;
+    updatedStartDate?: string;
+    updatedEndDate?: string;
+    isActive?: boolean;
+  }): Promise<User[]> {
+    const query = this.userRepository.createQueryBuilder('user');
+
+    if (filters.search) {
+      const lowerSearch = `%${filters.search.toLowerCase()}%`;
+      query.andWhere(
+        '(LOWER(user.email) LIKE :search OR LOWER(user.first_name) LIKE :search OR LOWER(user.last_name) LIKE :search)',
+        { search: lowerSearch },
+      );
+    }
+
+    if (filters.createdStartDate && filters.createdEndDate) {
+      query.andWhere('user.created_at BETWEEN :start AND :end', {
+        start: filters.createdStartDate,
+        end: filters.createdEndDate,
+      });
+    }
+
+    if (filters.updatedStartDate && filters.updatedEndDate) {
+      query.andWhere('user.updated_at BETWEEN :startU AND :endU', {
+        startU: filters.updatedStartDate,
+        endU: filters.updatedEndDate,
+      });
+    }
+
+    if (filters.isActive !== undefined) {
+      query.andWhere('user.is_active = :isActive', {
+        isActive: filters.isActive,
+      });
+    }
+
+    return query.getMany();
+  }
+
   async findOneActive(user_id: number): Promise<User | null> {
     return this.userRepository.findOne({
       where: { user_id, is_active: true },
@@ -79,7 +120,6 @@ export class UserService {
 
     const updatedData = { ...replaceUserDto };
 
-    // Hasheo
     if (replaceUserDto.password_hash) {
       const saltRounds = 10;
       updatedData.password_hash = await bcrypt.hash(replaceUserDto.password_hash, saltRounds);
