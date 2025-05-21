@@ -160,6 +160,7 @@ export class UserService {
       return null;
     }
   }
+
   async findAllWithFilters(filters: {
   email?: string;
   createdStartDate?: string;
