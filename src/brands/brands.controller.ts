@@ -11,8 +11,8 @@ import {
   UseGuards,
   UnauthorizedException,
 } from '@nestjs/common';
-import { BrandsService } from './brand.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
+import { BrandService } from './brand.service'; // Nombre corregido
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import {
   ApiTags,
@@ -32,7 +32,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @UseGuards(JwtAuthGuard)
 @Controller('brands')
 export class BrandsController {
-  constructor(private readonly brandsService: BrandsService) {}
+  constructor(private readonly brandsService: BrandService) {} // Nombre corregido
 
   @Get()
   @ApiOperation({ summary: 'Obtener todas las marcas de TI' })
@@ -221,7 +221,7 @@ export class BrandsController {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
-    return this.brandsService.create(createBrandDto, user);
+    return this.brandsService.create(createBrandDto, user.id);
   }
 
   @Put(':id')
@@ -261,7 +261,7 @@ export class BrandsController {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
-    return this.brandsService.update(+id, updateBrandDto, user);
+    return this.brandsService.update(+id, updateBrandDto, user.id);
   }
 
   @Delete(':id')
@@ -296,7 +296,7 @@ export class BrandsController {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
-    return this.brandsService.deactivate(+id, user);
+    return this.brandsService.deactivate(+id, user.id);
   }
 
   @Patch(':id/activate')
@@ -331,6 +331,6 @@ export class BrandsController {
     if (!user) {
       throw new UnauthorizedException('Token inválido o usuario no autenticado');
     }
-    return this.brandsService.activate(+id, user);
+    return this.brandsService.activate(+id, user.id);
   }
 }

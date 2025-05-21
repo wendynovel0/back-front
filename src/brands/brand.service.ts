@@ -91,63 +91,44 @@ export class BrandService {
     createdEndDate?: string;
     updatedStartDate?: string;
     updatedEndDate?: string;
-  }): Promise<BrandsView[]> {
-    const query = this.brandsViewRepository.createQueryBuilder('brand');
+    isActive?: boolean;
+  }): Promise<Brand[]> {
+    const query = this.brandRepository.createQueryBuilder('brand');
 
     if (filters.name) {
-      query.andWhere('LOWER(brand.brand_name) LIKE LOWER(:name)', { name: `%${filters.name}%` });
+      query.andWhere('brand.name ILIKE :name', { name: `%${filters.name}%` });
     }
 
-    if (filters.createdStartDate && filters.createdEndDate) {
-      query.andWhere('brand.created_at BETWEEN :start AND :end', {
-        start: filters.createdStartDate,
-        end: filters.createdEndDate,
+    if (filters.createdStartDate) {
+      query.andWhere('brand.createdAt >= :createdStartDate', {
+        createdStartDate: filters.createdStartDate,
       });
     }
 
-    if (filters.updatedStartDate && filters.updatedEndDate) {
-      query.andWhere('brand.updated_at BETWEEN :startUpdate AND :endUpdate', {
-        startUpdate: filters.updatedStartDate,
-        endUpdate: filters.updatedEndDate,
+    if (filters.createdEndDate) {
+      query.andWhere('brand.createdAt <= :createdEndDate', {
+        createdEndDate: filters.createdEndDate,
+      });
+    }
+
+    if (filters.updatedStartDate) {
+      query.andWhere('brand.updatedAt >= :updatedStartDate', {
+        updatedStartDate: filters.updatedStartDate,
+      });
+    }
+
+    if (filters.updatedEndDate) {
+      query.andWhere('brand.updatedAt <= :updatedEndDate', {
+        updatedEndDate: filters.updatedEndDate,
+      });
+    }
+
+    if (filters.isActive !== undefined) {
+      query.andWhere('brand.isActive = :isActive', {
+        isActive: filters.isActive,
       });
     }
 
     return query.getMany();
   }
-}
-async findAllWithFilters(filters: {
-  name?: string;
-  createdStartDate?: string;
-  createdEndDate?: string;
-  updatedStartDate?: string;
-  updatedEndDate?: string;
-  isActive?: boolean;
-}): Promise<Brand[]> {
-  const query = this.brandRepository.createQueryBuilder('brand');
-
-  if (filters.name) {
-    query.andWhere('brand.name ILIKE :name', { name: `%${filters.name}%` });
-  }
-
-  if (filters.createdStartDate) {
-    query.andWhere('brand.createdAt >= :createdStartDate', { createdStartDate: filters.createdStartDate });
-  }
-
-  if (filters.createdEndDate) {
-    query.andWhere('brand.createdAt <= :createdEndDate', { createdEndDate: filters.createdEndDate });
-  }
-
-  if (filters.updatedStartDate) {
-    query.andWhere('brand.updatedAt >= :updatedStartDate', { updatedStartDate: filters.updatedStartDate });
-  }
-
-  if (filters.updatedEndDate) {
-    query.andWhere('brand.updatedAt <= :updatedEndDate', { updatedEndDate: filters.updatedEndDate });
-  }
-
-  if (filters.isActive !== undefined) {
-    query.andWhere('brand.isActive = :isActive', { isActive: filters.isActive });
-  }
-
-  return query.getMany();
 }
