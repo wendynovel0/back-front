@@ -56,7 +56,7 @@ export class UserController {
     summary: 'Buscar usuarios con filtros combinados',
     description: 'Permite buscar usuarios por múltiples criterios. Todos los parámetros son opcionales.',
   })
-  @ApiQuery({ name: 'search', required: false, description: 'Texto para buscar en email, nombre o apellido', example: 'john' })
+  @ApiQuery({ name: 'search', required: false, description: 'Texto para buscar en email', example: 'minuevacuenta@gmai.com' })
   @ApiQuery({ name: 'createdStartDate', required: false, description: 'Fecha inicial de creación (YYYY-MM-DD)', example: '2023-01-01' })
   @ApiQuery({ name: 'createdEndDate', required: false, description: 'Fecha final de creación (YYYY-MM-DD)', example: '2023-12-31' })
   @ApiQuery({ name: 'updatedStartDate', required: false, description: 'Fecha inicial de actualización (YYYY-MM-DD)', example: '2023-01-01' })

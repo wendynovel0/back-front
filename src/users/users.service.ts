@@ -63,13 +63,12 @@ export class UserService {
     const query = this.userRepository.createQueryBuilder('user');
 
     if (filters.search) {
-      const lowerSearch = `%${filters.search.toLowerCase()}%`;
-      query.andWhere(
-        '(LOWER(user.email) LIKE :search OR LOWER(user.first_name) LIKE :search OR LOWER(user.last_name) LIKE :search)',
-        { search: lowerSearch },
-      );
-    }
-
+  const lowerSearch = `%${filters.search.toLowerCase()}%`;
+  query.andWhere(
+    '(LOWER("user"."email") LIKE :search OR LOWER("user"."first_name") LIKE :search OR LOWER("user"."last_name") LIKE :search)',
+    { search: lowerSearch },
+  );
+}
     if (filters.createdStartDate && filters.createdEndDate) {
       query.andWhere('user.created_at BETWEEN :start AND :end', {
         start: filters.createdStartDate,
