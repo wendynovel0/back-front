@@ -65,9 +65,9 @@ export class UserService {
     const user = await this.findOne(id);
     const oldValue = { ...user };
 
-    if (!replaceUserDto.email || !replaceUserDto.name) {
-      throw new BadRequestException('Email y name son obligatorios en PUT');
-    }
+    if (!replaceUserDto.email || replaceUserDto.email.trim() === '') {
+  throw new BadRequestException('El email es obligatorio');
+}
 
     const newUser = this.userRepository.create({
       ...user,
