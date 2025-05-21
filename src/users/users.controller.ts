@@ -54,80 +54,61 @@ export class UserController {
   @Get()
   @ApiOperation({
     summary: 'Buscar usuarios con filtros combinados',
-    description: 'Permite buscar usuarios por múltiples criterios. Todos los parámetros son opcionales.',
+    description: 'Permite buscar usuarios por email, estado activo y fechas de creación/actualización',
   })
-  @ApiQuery({ name: 'search', required: false, description: 'Texto para buscar en email', example: 'minuevacuenta@gmai.com' })
+  @ApiQuery({ name: 'email', required: false, description: 'Filtrar por email (búsqueda parcial)', example: 'ejemplo@correo.com' })
   @ApiQuery({ name: 'createdStartDate', required: false, description: 'Fecha inicial de creación (YYYY-MM-DD)', example: '2023-01-01' })
   @ApiQuery({ name: 'createdEndDate', required: false, description: 'Fecha final de creación (YYYY-MM-DD)', example: '2023-12-31' })
   @ApiQuery({ name: 'updatedStartDate', required: false, description: 'Fecha inicial de actualización (YYYY-MM-DD)', example: '2023-01-01' })
   @ApiQuery({ name: 'updatedEndDate', required: false, description: 'Fecha final de actualización (YYYY-MM-DD)', example: '2023-12-31' })
-  @ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true) o inactivo (false)', example: true })
+  @ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true/false)', example: true })
   @ApiResponse({ status: 200, description: 'Lista de usuarios encontrados', type: [User] })
-  @ApiResponse({ status: 401, description: 'No autorizado - Token inválido o no proporcionado' })
   async findAllWithFilters(
-    @Query('search') search: string,
+    @Query('email') email: string,
     @Query('createdStartDate') createdStartDate: string,
     @Query('createdEndDate') createdEndDate: string,
     @Query('updatedStartDate') updatedStartDate: string,
     @Query('updatedEndDate') updatedEndDate: string,
     @Query('isActive') isActive: string,
-    @CurrentUser() user: User,
+    @CurrentUser() user: User
   ) {
     if (!user) {
       throw new UnauthorizedException('Token inválido o no proporcionado');
     }
 
-    const now = new Date();
-
     if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
-      throw new BadRequestException('Debe proporcionar ambas fechas de creación: createdStartDate y createdEndDate');
+      throw new BadRequestException('Debe proporcionar ambas fechas de creación');
     }
+
     if (createdStartDate && createdEndDate) {
       const start = new Date(createdStartDate);
       const end = new Date(createdEndDate);
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        throw new BadRequestException('Fechas de creación inválidas, formato esperado YYYY-MM-DD');
-      }
       if (start > end) {
         throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
-      }
-      if (end > now) {
-        throw new BadRequestException('createdEndDate no puede ser una fecha futura');
       }
     }
 
     if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
-      throw new BadRequestException('Debe proporcionar ambas fechas de actualización: updatedStartDate y updatedEndDate');
+      throw new BadRequestException('Debe proporcionar ambas fechas de actualización');
     }
+
     if (updatedStartDate && updatedEndDate) {
       const start = new Date(updatedStartDate);
       const end = new Date(updatedEndDate);
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        throw new BadRequestException('Fechas de actualización inválidas, formato esperado YYYY-MM-DD');
-      }
       if (start > end) {
         throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
       }
-      if (end > now) {
-        throw new BadRequestException('updatedEndDate no puede ser una fecha futura');
-      }
     }
 
-    const isActiveBoolean = typeof isActive === 'string'
-      ? isActive.toLowerCase() === 'true'
-        ? true
-        : isActive.toLowerCase() === 'false'
-          ? false
-          : undefined
-      : undefined;
+    const isActiveBoolean = isActive ? isActive.toLowerCase() === 'true' : undefined;
 
     return this.userService.findAllWithFilters({
-      search,
+      email,
       createdStartDate,
       createdEndDate,
       updatedStartDate,
       updatedEndDate,
-      isActive: isActiveBoolean,
+      isActive: isActiveBoolean
     });
   }
 

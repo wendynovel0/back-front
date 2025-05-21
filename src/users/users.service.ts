@@ -4,23 +4,22 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
 import { User } from './entities/user.entity';
-import { UsersView } from './entities/users-view.entity';
 import { ActionLogsService } from '../action-logs/action-logs.service';
-
+import { UsersView } from './entities/users-view.entity';
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    @InjectRepository(UsersView)
-    private readonly usersViewRepository: Repository<UsersView>,
     private actionLogsService: ActionLogsService,
+    @InjectRepository(UsersView) 
+    private usersViewRepository: Repository<UsersView>,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
@@ -52,46 +51,6 @@ export class UserService {
     return this.userRepository.find();
   }
 
-  async findAllWithFilters(filters: {
-    search?: string;
-    createdStartDate?: string;
-    createdEndDate?: string;
-    updatedStartDate?: string;
-    updatedEndDate?: string;
-    isActive?: boolean;
-  }): Promise<User[]> {
-    const query = this.userRepository.createQueryBuilder('user');
-
-    if (filters.search) {
-  const lowerSearch = `%${filters.search.toLowerCase()}%`;
-  query.andWhere(
-    '(LOWER("user"."email") LIKE :search OR LOWER("user"."first_name") LIKE :search OR LOWER("user"."last_name") LIKE :search)',
-    { search: lowerSearch },
-  );
-}
-    if (filters.createdStartDate && filters.createdEndDate) {
-      query.andWhere('user.created_at BETWEEN :start AND :end', {
-        start: filters.createdStartDate,
-        end: filters.createdEndDate,
-      });
-    }
-
-    if (filters.updatedStartDate && filters.updatedEndDate) {
-      query.andWhere('user.updated_at BETWEEN :startU AND :endU', {
-        startU: filters.updatedStartDate,
-        endU: filters.updatedEndDate,
-      });
-    }
-
-    if (filters.isActive !== undefined) {
-      query.andWhere('user.is_active = :isActive', {
-        isActive: filters.isActive,
-      });
-    }
-
-    return query.getMany();
-  }
-
   async findOneActive(user_id: number): Promise<User | null> {
     return this.userRepository.findOne({
       where: { user_id, is_active: true },
@@ -119,6 +78,7 @@ export class UserService {
 
     const updatedData = { ...replaceUserDto };
 
+    // Hasheo
     if (replaceUserDto.password_hash) {
       const saltRounds = 10;
       updatedData.password_hash = await bcrypt.hash(replaceUserDto.password_hash, saltRounds);
@@ -200,4 +160,39 @@ export class UserService {
       return null;
     }
   }
+  async findAllWithFilters(filters: {
+  email?: string;
+  createdStartDate?: string;
+  createdEndDate?: string;
+  updatedStartDate?: string;
+  updatedEndDate?: string;
+  isActive?: boolean;
+}): Promise<User[]> {
+  const query = this.usersViewRepository.createQueryBuilder('user');
+
+  if (filters.email) {
+    query.andWhere('LOWER(user.email) LIKE LOWER(:email)', { email: `%${filters.email}%` });
+  }
+
+  if (filters.createdStartDate && filters.createdEndDate) {
+    query.andWhere('user.created_at BETWEEN :start AND :end', {
+      start: filters.createdStartDate,
+      end: filters.createdEndDate,
+    });
+  }
+
+  if (filters.updatedStartDate && filters.updatedEndDate) {
+    query.andWhere('user.updated_at BETWEEN :startUpdate AND :endUpdate', {
+      startUpdate: filters.updatedStartDate,
+      endUpdate: filters.updatedEndDate,
+    });
+  }
+
+  if (typeof filters.isActive === 'boolean') {
+    query.andWhere('user.is_active = :isActive', { isActive: filters.isActive });
+  }
+
+  return query.getMany();
+}
+
 }
