@@ -85,6 +85,59 @@ export class BrandService {
     await this.brandRepository.remove(brand);
   }
 
+  async deactivate(id: number, performedBy: number, ip?: string): Promise<Brand> {
+  const brand = await this.findOne(id);
+
+  if (!brand.isActive) {
+    return brand; // Ya está desactivada, opcional evitar duplicar acciones
+  }
+
+  const oldValue = { ...brand };
+
+  brand.isActive = false;
+
+  const updatedBrand = await this.brandRepository.save(brand);
+
+  await this.actionLogsService.logAction({
+    userId: performedBy,
+    actionType: 'UPDATE',
+    entityType: 'brand',
+    entityId: brand.id,
+    oldValue,
+    newValue: updatedBrand,
+    ipAddress: ip,
+  });
+
+  return updatedBrand;
+}
+
+async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
+  const brand = await this.findOne(id);
+
+  if (brand.isActive) {
+    return brand; // Ya está activada, opcional evitar duplicar acciones
+  }
+
+  const oldValue = { ...brand };
+
+  brand.isActive = true;
+
+  const updatedBrand = await this.brandRepository.save(brand);
+
+  await this.actionLogsService.logAction({
+    userId: performedBy,
+    actionType: 'UPDATE',
+    entityType: 'brand',
+    entityId: brand.id,
+    oldValue,
+    newValue: updatedBrand,
+    ipAddress: ip,
+  });
+
+  return updatedBrand;
+}
+
+
   async findAllWithFilters(filters: {
     name?: string;
     createdStartDate?: string;
@@ -92,8 +145,8 @@ export class BrandService {
     updatedStartDate?: string;
     updatedEndDate?: string;
     isActive?: boolean;
-  }): Promise<Brand[]> {
-    const query = this.brandRepository.createQueryBuilder('brand');
+  }): Promise<BrandsView[]> {
+    const query = this.brandsViewRepository.createQueryBuilder('brand');
 
     if (filters.name) {
       query.andWhere('brand.name ILIKE :name', { name: `%${filters.name}%` });
