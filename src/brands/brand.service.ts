@@ -1,120 +1,153 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Brand } from './entities/brand.entity';
 import { BrandsView } from './entities/brands-view.entity';
+import { ActionLogsService } from '../action-logs/action-logs.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
-import { ActionLogsService } from '../action-logs/action-logs.service';
-import { User } from '../users/entities/user.entity';
 
 @Injectable()
-export class BrandsService {
+export class BrandService {
   constructor(
     @InjectRepository(Brand)
-    private brandRepository: Repository<Brand>,
+    private readonly brandRepository: Repository<Brand>,
+
     @InjectRepository(BrandsView)
     private readonly brandsViewRepository: Repository<BrandsView>,
-    private actionLogsService: ActionLogsService,
+
+    private readonly actionLogsService: ActionLogsService,
   ) {}
 
-  async findAll(includeInactive = false): Promise<Brand[]> {
-    const where = includeInactive ? {} : { isActive: true };
-    return this.brandRepository.find({
-      where,
-      order: { name: 'ASC' },
+  async create(createBrandDto: CreateBrandDto, performedBy: number, ip?: string): Promise<Brand> {
+    const brand = this.brandRepository.create(createBrandDto);
+    const savedBrand = await this.brandRepository.save(brand);
+
+    await this.actionLogsService.logAction({
+      userId: performedBy,
+      actionType: 'CREATE',
+      entityType: 'brand',
+      entityId: savedBrand.id,
+      newValue: savedBrand,
+      ipAddress: ip,
     });
+
+    return savedBrand;
+  }
+
+  async findAll(): Promise<Brand[]> {
+    return this.brandRepository.find();
   }
 
   async findOne(id: number): Promise<Brand> {
     const brand = await this.brandRepository.findOne({ where: { id } });
-    if (!brand) {
-      throw new NotFoundException(`Brand with ID ${id} not found`);
-    }
+    if (!brand) throw new NotFoundException('Brand not found');
     return brand;
   }
 
-  async create(createBrandDto: CreateBrandDto, user: User): Promise<Brand> {
-    try {
-      const brand = this.brandRepository.create({
-        ...createBrandDto,
-        isActive: true,
-      });
-
-      const savedBrand = await this.brandRepository.save(brand);
-
-      await this.actionLogsService.logAction({
-        userId: user.user_id,
-        actionType: 'CREATE',
-        entityType: 'Brand',
-        entityId: savedBrand.id,
-        newValue: savedBrand,
-      });
-
-      return savedBrand;
-    } catch (error) {
-      if (error.code === '23505') {
-        throw new ConflictException('Brand name already exists');
-      }
-      throw error;
-    }
-  }
-
-  async update(id: number, updateBrandDto: UpdateBrandDto, user: User): Promise<Brand> {
+  async update(
+    id: number,
+    updateBrandDto: UpdateBrandDto,
+    performedBy: number,
+    ip?: string,
+  ): Promise<Brand> {
     const brand = await this.findOne(id);
-    const oldValues = { ...brand };
+    const oldValue = { ...brand };
 
-    try {
-      Object.assign(brand, updateBrandDto);
-      const updatedBrand = await this.brandRepository.save(brand);
+    Object.assign(brand, updateBrandDto);
+    const updatedBrand = await this.brandRepository.save(brand);
 
-      await this.actionLogsService.logAction({
-        userId: user.user_id,
-        actionType: 'UPDATE',
-        entityType: 'Brand',
-        entityId: updatedBrand.id,
-        oldValue: oldValues,
-        newValue: updatedBrand,
-      });
-
-      return updatedBrand;
-    } catch (error) {
-      if (error.code === '23505') {
-        throw new ConflictException('Brand name already exists');
-      }
-      throw error;
-    }
-  }
-
-  async deactivate(id: number, user: User): Promise<Brand> {
-    const brand = await this.findOne(id);
-    brand.isActive = false;
-    
     await this.actionLogsService.logAction({
-      userId: user.user_id,
-      actionType: 'DEACTIVATE',
-      entityType: 'Brand',
-      entityId: brand.id,
-      oldValue: { isActive: true },
-      newValue: { isActive: false },
+      userId: performedBy,
+      actionType: 'UPDATE',
+      entityType: 'brand',
+      entityId: updatedBrand.id,
+      oldValue,
+      newValue: updatedBrand,
+      ipAddress: ip,
     });
 
-    return this.brandRepository.save(brand);
+    return updatedBrand;
   }
 
-  async activate(id: number, user: User): Promise<Brand> {
+  async remove(id: number, performedBy: number, ip?: string): Promise<void> {
     const brand = await this.findOne(id);
-    brand.isActive = true;
-    
+
     await this.actionLogsService.logAction({
-      userId: user.user_id,
-      actionType: 'ACTIVATE',
-      entityType: 'Brand',
+      userId: performedBy,
+      actionType: 'DELETE',
+      entityType: 'brand',
       entityId: brand.id,
-      oldValue: { isActive: false },
-      newValue: { isActive: true },
+      oldValue: brand,
+      ipAddress: ip,
     });
 
-    return this.brandRepository.save(brand);
+    await this.brandRepository.remove(brand);
   }
+
+  async findAllWithFilters(filters: {
+    name?: string;
+    createdStartDate?: string;
+    createdEndDate?: string;
+    updatedStartDate?: string;
+    updatedEndDate?: string;
+  }): Promise<BrandsView[]> {
+    const query = this.brandsViewRepository.createQueryBuilder('brand');
+
+    if (filters.name) {
+      query.andWhere('LOWER(brand.brand_name) LIKE LOWER(:name)', { name: `%${filters.name}%` });
+    }
+
+    if (filters.createdStartDate && filters.createdEndDate) {
+      query.andWhere('brand.created_at BETWEEN :start AND :end', {
+        start: filters.createdStartDate,
+        end: filters.createdEndDate,
+      });
+    }
+
+    if (filters.updatedStartDate && filters.updatedEndDate) {
+      query.andWhere('brand.updated_at BETWEEN :startUpdate AND :endUpdate', {
+        startUpdate: filters.updatedStartDate,
+        endUpdate: filters.updatedEndDate,
+      });
+    }
+
+    return query.getMany();
+  }
+}
+async findAllWithFilters(filters: {
+  name?: string;
+  createdStartDate?: string;
+  createdEndDate?: string;
+  updatedStartDate?: string;
+  updatedEndDate?: string;
+  isActive?: boolean;
+}): Promise<Brand[]> {
+  const query = this.brandRepository.createQueryBuilder('brand');
+
+  if (filters.name) {
+    query.andWhere('brand.name ILIKE :name', { name: `%${filters.name}%` });
+  }
+
+  if (filters.createdStartDate) {
+    query.andWhere('brand.createdAt >= :createdStartDate', { createdStartDate: filters.createdStartDate });
+  }
+
+  if (filters.createdEndDate) {
+    query.andWhere('brand.createdAt <= :createdEndDate', { createdEndDate: filters.createdEndDate });
+  }
+
+  if (filters.updatedStartDate) {
+    query.andWhere('brand.updatedAt >= :updatedStartDate', { updatedStartDate: filters.updatedStartDate });
+  }
+
+  if (filters.updatedEndDate) {
+    query.andWhere('brand.updatedAt <= :updatedEndDate', { updatedEndDate: filters.updatedEndDate });
+  }
+
+  if (filters.isActive !== undefined) {
+    query.andWhere('brand.isActive = :isActive', { isActive: filters.isActive });
+  }
+
+  return query.getMany();
 }
