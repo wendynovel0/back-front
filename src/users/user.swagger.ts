@@ -1,18 +1,19 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ViewEntity, ViewColumn } from 'typeorm';
 
-export class UserSwagger {
-  @ApiProperty()
+@ViewEntity({ name: 'users_view' })
+export class UsersView {
+  @ViewColumn()
   user_id: number;
 
-  @ApiProperty()
+  @ViewColumn()
   email: string;
 
-  @ApiProperty()
+  @ViewColumn()
   is_active: boolean;
 
-  @ApiProperty()
+  @ViewColumn()
   created_at: Date;
 
-  @ApiProperty()
+  @ViewColumn()
   updated_at: Date;
 }
