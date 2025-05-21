@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
@@ -66,13 +71,22 @@ export class UserService {
     const oldValue = { ...user };
 
     if (!replaceUserDto.email || replaceUserDto.email.trim() === '') {
-  throw new BadRequestException('El email es obligatorio');
-}
+      throw new BadRequestException('El email es obligatorio');
+    }
+
+    const updatedData = { ...replaceUserDto };
+
+    // Hasheo
+    if (replaceUserDto.password_hash) {
+      const saltRounds = 10;
+      updatedData.password_hash = await bcrypt.hash(replaceUserDto.password_hash, saltRounds);
+    }
 
     const newUser = this.userRepository.create({
       ...user,
-      ...replaceUserDto,
+      ...updatedData,
     });
+
     const replacedUser = await this.userRepository.save(newUser);
 
     await this.actionLogsService.logAction({
@@ -113,11 +127,7 @@ export class UserService {
     return updatedUser;
   }
 
-  async remove(
-    id: number,
-    performedBy: number,
-    ip?: string,
-  ): Promise<void> {
+  async remove(id: number, performedBy: number, ip?: string): Promise<void> {
     const user = await this.findOne(id);
 
     await this.actionLogsService.logAction({

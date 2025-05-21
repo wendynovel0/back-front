@@ -9,7 +9,6 @@ import {
   UseGuards,
   Ip,
   Put,
-  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
