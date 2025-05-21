@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Brand } from './entities/brand.entity';
+import { BrandsView } from './entities/brands-view.entity';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { ActionLogsService } from '../action-logs/action-logs.service';
@@ -12,6 +13,8 @@ export class BrandsService {
   constructor(
     @InjectRepository(Brand)
     private brandRepository: Repository<Brand>,
+    @InjectRepository(BrandsView)
+    private readonly brandsViewRepository: Repository<BrandsView>,
     private actionLogsService: ActionLogsService,
   ) {}
 

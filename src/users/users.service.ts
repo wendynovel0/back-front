@@ -10,6 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
 import { User } from './entities/user.entity';
+import { UsersView } from './entities/users-view.entity';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 
 @Injectable()
@@ -17,6 +18,8 @@ export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(UsersView)
+    private readonly usersViewRepository: Repository<UsersView>,
     private actionLogsService: ActionLogsService,
   ) {}
 

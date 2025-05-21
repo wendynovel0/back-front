@@ -24,6 +24,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
 import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from './entities/user.entity';
+import { UsersView } from './entities/users-view.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Users')
@@ -32,6 +33,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+  
 
   @Post()
   @ApiCreatedResponse({ type: User, description: 'Usuario creado exitosamente' })
