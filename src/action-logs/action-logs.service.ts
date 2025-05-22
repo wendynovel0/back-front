@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ActionLog } from './entities/action-log.entity';
@@ -74,8 +74,8 @@ export class ActionLogsService {
     }
 
     if (filters.startDate && !filters.endDate) {
-      throw new Error('Debe proporcionar una fecha de fin si se especifica la fecha de inicio');
-    }
+  throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio');
+}
 
     if (filters.startDate && filters.endDate) {
       query.andWhere('log.action_timestamp BETWEEN :startDate AND :endDate', {

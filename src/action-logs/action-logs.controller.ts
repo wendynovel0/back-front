@@ -50,6 +50,10 @@ export class ActionLogsController {
       },
     },
   })
+  @ApiResponse({
+  status: 400,
+  description: 'Debe proporcionar una fecha de fin si se especifica la fecha de inicio',
+})
   @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
   async findAllWithFilters(
     @Query('userId') userId?: number,
