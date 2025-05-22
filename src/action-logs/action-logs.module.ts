@@ -5,10 +5,11 @@ import { ActionLogsController } from './action-logs.controller';
 import { ActionLog } from './entities/action-log.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
+import { LogsView } from './entities/logs-view.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([ActionLog, User]),
+    TypeOrmModule.forFeature([ActionLog, User, LogsView]),
     AuthModule,
   ],
   controllers: [ActionLogsController],
