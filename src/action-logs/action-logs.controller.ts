@@ -54,6 +54,8 @@ export class ActionLogsController {
   status: 400,
   description: 'Debe proporcionar una fecha de fin si se especifica la fecha de inicio',
 })
+@ApiResponse({ status: 400, description: 'La fecha de inicio no puede estar en el futuro' })
+@ApiResponse({ status: 400, description: 'La fecha de fin no puede estar en el futuro' })
   @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
   async findAllWithFilters(
     @Query('userId') userId?: number,

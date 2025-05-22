@@ -77,6 +77,15 @@ export class ActionLogsService {
   throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio');
 }
 
+const now = new Date();
+if (filters.startDate && new Date(filters.startDate) > now) {
+  throw new BadRequestException('La fecha de inicio no puede estar en el futuro');
+}
+
+if (filters.endDate && new Date(filters.endDate) > now) {
+  throw new BadRequestException('La fecha de fin no puede estar en el futuro');
+}
+
     if (filters.startDate && filters.endDate) {
       query.andWhere('log.action_timestamp BETWEEN :startDate AND :endDate', {
         startDate: filters.startDate,
