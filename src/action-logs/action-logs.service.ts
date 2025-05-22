@@ -86,6 +86,10 @@ if (filters.endDate && new Date(filters.endDate) > now) {
   throw new BadRequestException('La fecha de fin no puede estar en el futuro');
 }
 
+if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
+  throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha de fin');
+}
+
     if (filters.startDate && filters.endDate) {
       query.andWhere('log.action_timestamp BETWEEN :startDate AND :endDate', {
         startDate: filters.startDate,
