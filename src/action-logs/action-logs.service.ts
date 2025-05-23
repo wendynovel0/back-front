@@ -62,10 +62,10 @@ export class ActionLogsService {
     }
 
     if (filters.actionType) {
-      query.andWhere('log.action_type = :actionType', {
-        actionType: filters.actionType,
-      });
-    }
+  query.andWhere('UPPER(log.action_type) = :actionType', {
+    actionType: filters.actionType.toUpperCase(),
+  });
+}
 
     if (filters.tableAffected) {
       query.andWhere('log.table_affected = :tableAffected', {
