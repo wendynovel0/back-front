@@ -30,6 +30,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
 import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from './entities/user.entity';
+import { UsersView } from './entities/users-view.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Users')
@@ -52,70 +53,71 @@ export class UserController {
   }
 
   @Get()
-  @ApiOperation({
-    summary: 'Buscar usuarios con filtros combinados',
-    description: 'Permite buscar usuarios por email, estado activo y fechas de creación/actualización',
-  })
-  @ApiQuery({ name: 'email', required: false, description: 'Filtrar por email (búsqueda parcial)', example: 'ejemplo@correo.com' })
-  @ApiQuery({ name: 'createdStartDate', required: false, description: 'Fecha inicial de creación (YYYY-MM-DD)', example: '2023-01-01' })
-  @ApiQuery({ name: 'createdEndDate', required: false, description: 'Fecha final de creación (YYYY-MM-DD)', example: '2023-12-31' })
-  @ApiQuery({ name: 'updatedStartDate', required: false, description: 'Fecha inicial de actualización (YYYY-MM-DD)', example: '2023-01-01' })
-  @ApiQuery({ name: 'updatedEndDate', required: false, description: 'Fecha final de actualización (YYYY-MM-DD)', example: '2023-12-31' })
-  @ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true/false)', example: true })
-  @ApiResponse({ status: 200, description: 'Lista de usuarios encontrados', type: [User] })
-  async findAllWithFilters(
-    @Query('email') email: string,
-    @Query('createdStartDate') createdStartDate: string,
-    @Query('createdEndDate') createdEndDate: string,
-    @Query('updatedStartDate') updatedStartDate: string,
-    @Query('updatedEndDate') updatedEndDate: string,
-    @Query('isActive') isActive: string,
-    @CurrentUser() user: User
-  ) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o no proporcionado');
-    }
-
-    if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
-      throw new BadRequestException('Debe proporcionar ambas fechas de creación');
-    }
-
-    if (createdStartDate && createdEndDate) {
-      const start = new Date(createdStartDate);
-      const end = new Date(createdEndDate);
-      if (start > end) {
-        throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
-      }
-    }
-
-    if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
-      throw new BadRequestException('Debe proporcionar ambas fechas de actualización');
-    }
-
-    if (updatedStartDate && updatedEndDate) {
-      const start = new Date(updatedStartDate);
-      const end = new Date(updatedEndDate);
-      if (start > end) {
-        throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
-      }
-    }
-
-    const isActiveLower = isActive?.toLowerCase();
-    const isActiveBoolean =
-      isActiveLower === 'true' ? true :
-      isActiveLower === 'false' ? false :
-      undefined;
-
-
-    return this.userService.findAllWithFilters({
-      email,
-      createdStartDate,
-      createdEndDate,
-      updatedStartDate,
-      updatedEndDate,
-      isActive: isActiveBoolean
-    });
+@ApiOperation({
+  summary: 'Buscar usuarios con filtros combinados',
+  description: 'Permite buscar usuarios por email, estado activo y fechas de creación/actualización',
+})
+@ApiQuery({ name: 'email', required: false, description: 'Filtrar por email (búsqueda parcial)', example: 'ejemplo@correo.com' })
+@ApiQuery({ name: 'createdStartDate', required: false, description: 'Fecha inicial de creación (YYYY-MM-DD)', example: '2023-01-01' })
+@ApiQuery({ name: 'createdEndDate', required: false, description: 'Fecha final de creación (YYYY-MM-DD)', example: '2023-12-31' })
+@ApiQuery({ name: 'updatedStartDate', required: false, description: 'Fecha inicial de actualización (YYYY-MM-DD)', example: '2023-01-01' })
+@ApiQuery({ name: 'updatedEndDate', required: false, description: 'Fecha final de actualización (YYYY-MM-DD)', example: '2023-12-31' })
+@ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true/false)', example: true })
+@ApiResponse({ status: 200, description: 'Lista de usuarios encontrados', type: [UsersView] })
+async findAllWithFilters(
+  @Query('email') email: string,
+  @Query('createdStartDate') createdStartDate: string,
+  @Query('createdEndDate') createdEndDate: string,
+  @Query('updatedStartDate') updatedStartDate: string,
+  @Query('updatedEndDate') updatedEndDate: string,
+  @Query('isActive') isActive: string,
+  @CurrentUser() user: any
+) {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o no proporcionado');
   }
+
+  if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
+    throw new BadRequestException('Debe proporcionar ambas fechas de creación');
+  }
+
+  if (createdStartDate && createdEndDate) {
+    const start = new Date(createdStartDate);
+    const end = new Date(createdEndDate);
+    if (start > end) {
+      throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
+    }
+  }
+
+  if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
+    throw new BadRequestException('Debe proporcionar ambas fechas de actualización');
+  }
+
+  if (updatedStartDate && updatedEndDate) {
+    const start = new Date(updatedStartDate);
+    const end = new Date(updatedEndDate);
+    if (start > end) {
+      throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
+    }
+  }
+
+  const isActiveLower = isActive?.toLowerCase();
+  const isActiveBoolean = isActiveLower === 'true'
+    ? true
+    : isActiveLower === 'false'
+    ? false
+    : undefined;
+
+  return this.userService.findAllWithFilters({
+    email,
+    createdStartDate,
+    createdEndDate,
+    updatedStartDate,
+    updatedEndDate,
+    isActive: isActiveBoolean,
+  });
+}
+
 
   @Get(':id')
   @ApiOkResponse({ type: User, description: 'Usuario obtenido correctamente' })
