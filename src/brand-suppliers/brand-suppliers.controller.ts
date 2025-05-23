@@ -15,7 +15,11 @@ import { BrandSupplierView } from './entities/brand-suppliers-view.entity';
 @UseGuards(JwtAuthGuard)
 export class BrandSuppliersController {
   constructor(private readonly brandSuppliersService: BrandSuppliersService) {}
-
+@Get()
+@ApiOperation({
+  summary: 'Buscar proveedores con filtros combinados',
+  description: 'Permite buscar proveedores por nombre, marca, fechas de creación/edición o marca. Todos los parámetros son opcionales.'
+})
 @ApiQuery({
   name: 'isActive',
   required: false,
