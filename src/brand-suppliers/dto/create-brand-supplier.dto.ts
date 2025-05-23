@@ -36,7 +36,7 @@ export class CreateBrandSupplierDto {
     example: '9876543210',
     description: 'Teléfono de contacto (10 dígitos)',
     minLength: 10,
-    maxLength: 10
+    maxLength: 15
   })
   @IsOptional()
   @IsString()
