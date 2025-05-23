@@ -93,8 +93,8 @@ export class UserService {
 
     await this.actionLogsService.logAction({
       userId: performedBy,
-      actionType: 'REPLACE',
-      entityType: 'user',
+      actionType: 'UPDATE',
+      entityType: 'User',
       entityId: replacedUser.user_id,
       oldValue,
       newValue: replacedUser,
