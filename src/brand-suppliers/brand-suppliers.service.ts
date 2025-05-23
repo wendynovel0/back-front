@@ -124,26 +124,32 @@ export class BrandSuppliersService {
 
 
   async create(createBrandSupplierDto: CreateBrandSupplierDto, user: User): Promise<BrandSupplier> {
-    try {
-      const supplier = this.brandSupplierRepository.create(createBrandSupplierDto);
-      const savedSupplier = await this.brandSupplierRepository.save(supplier);
+  try {
+    // Crear entidad con relación a la marca
+    const supplier = this.brandSupplierRepository.create({
+      ...createBrandSupplierDto,
+      brand: { id: createBrandSupplierDto.brandId }, // referencia a la relación
+    });
 
-      await this.actionLogsService.logAction({
-        userId: user.user_id,
-        actionType: 'CREATE',
-        entityType: 'BrandSupplier',
-        entityId: savedSupplier.id,
-        newValue: savedSupplier,
-      });
+    const savedSupplier = await this.brandSupplierRepository.save(supplier);
 
-      return savedSupplier;
-    } catch (error) {
-      if (error.code === '23505') {
-        throw new ConflictException('El email ya está registrado');
-      }
-      throw error;
+    await this.actionLogsService.logAction({
+      userId: user.user_id,
+      actionType: 'CREATE',
+      entityType: 'BrandSupplier',
+      entityId: savedSupplier.id,
+      newValue: savedSupplier,
+    });
+
+    return savedSupplier;
+  } catch (error) {
+    if (error.code === '23505') {
+      throw new ConflictException('El email ya está registrado');
     }
+    throw error;
   }
+}
+
 
   async replace(id: number, createBrandSupplierDto: CreateBrandSupplierDto, user: User): Promise<BrandSupplier> {
   const existing = await this.findOne(id);
