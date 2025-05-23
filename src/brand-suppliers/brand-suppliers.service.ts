@@ -19,13 +19,14 @@ export class BrandSuppliersService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async findAll(filters: {
+ async findAll(filters: {
   search?: string;
   createdStartDate?: string;
   createdEndDate?: string;
   updatedStartDate?: string;
   updatedEndDate?: string;
   brandIds?: number[];
+  isActive?: boolean;
 }): Promise<BrandSupplierView[]> {
   const {
     search,
@@ -33,10 +34,11 @@ export class BrandSuppliersService {
     createdEndDate,
     updatedStartDate,
     updatedEndDate,
-    brandIds
+    brandIds,
+    isActive
   } = filters;
 
-  // Validación de fechas de creación
+  // Validaciones de fechas (sin cambios)
   if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
     throw new BadRequestException('Debe proporcionar ambas fechas: createdStartDate y createdEndDate');
   }
@@ -57,7 +59,6 @@ export class BrandSuppliersService {
     }
   }
 
-  // Validación de fechas de edición
   if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
     throw new BadRequestException('Debe proporcionar ambas fechas: updatedStartDate y updatedEndDate');
   }
@@ -78,12 +79,11 @@ export class BrandSuppliersService {
     }
   }
 
-  const query = this.brandSuppliersViewRepository
-    .createQueryBuilder('supplier');
+  const query = this.brandSuppliersViewRepository.createQueryBuilder('supplier');
 
   if (search) {
     query.andWhere(
-      '(LOWER(supplier.supplier_name) LIKE LOWER(:search) OR LOWER(supplier.contact_person) LIKE LOWER(:search) OR LOWER(supplier.email) LIKE LOWER(:search) OR LOWER(supplier.brand_name) LIKE LOWER(:search))',
+      `(LOWER(supplier.supplier_name) LIKE LOWER(:search) OR LOWER(supplier.contact_person) LIKE LOWER(:search) OR LOWER(supplier.email) LIKE LOWER(:search) OR LOWER(supplier.brand_name) LIKE LOWER(:search))`,
       { search: `%${search}%` }
     );
   }
@@ -106,8 +106,13 @@ export class BrandSuppliersService {
     query.andWhere('supplier.brand_id IN (:...brandIds)', { brandIds });
   }
 
+  if (typeof isActive === 'boolean') {
+    query.andWhere('supplier.supplier_is_active = :isActive', { isActive });
+  }
+
   return query.orderBy('supplier.supplier_name', 'ASC').getMany();
 }
+
   
   async findOne(id: number): Promise<BrandSupplier> {
   const supplier = await this.brandSupplierRepository.findOne({
