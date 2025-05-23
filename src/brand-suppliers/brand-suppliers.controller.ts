@@ -139,98 +139,99 @@ async findAll(
   }
 
   @Post()
-  @ApiOperation({ 
-    summary: 'Crear un nuevo proveedor',
-    description: 'Registra un nuevo proveedor en el sistema. El email debe ser único.'
-  })
-  @ApiBody({ 
-    type: CreateBrandSupplierDto,
-    examples: {
-      'Proveedor básico': {
-        summary: 'Ejemplo mínimo requerido',
-        value: {
-          name: 'Proveedor Ejemplo',
-          email: 'proveedor@ejemplo.com',
-          brandId: 1
-        }
-      },
-      'Proveedor completo': {
-        summary: 'Ejemplo con todos los campos',
-        value: {
-          name: 'Proveedor Completo S.A.',
-          contactPerson: 'Ana García',
-          email: 'contacto@proveedorcompleto.com',
-          phone: '987654321',
-          address: 'Calle Ejemplo 123, Lima, Perú',
-          brandId: 2,
-          isActive: true
-        }
+@ApiOperation({ 
+  summary: 'Crear un nuevo proveedor',
+  description: 'Registra un nuevo proveedor en el sistema. El email debe ser único.'
+})
+@ApiBody({ 
+  type: CreateBrandSupplierDto,
+  examples: {
+    'Proveedor básico': {
+      summary: 'Ejemplo mínimo requerido',
+      value: {
+        name: 'Proveedor Ejemplo',
+        email: 'proveedor@ejemplo.com',
+        brandId: 1
+      }
+    },
+    'Proveedor completo': {
+      summary: 'Ejemplo con todos los campos',
+      value: {
+        name: 'Proveedor Completo S.A.',
+        contactPerson: 'Ana García',
+        email: 'contacto@proveedorcompleto.com',
+        phone: '987654321',
+        address: 'Calle Ejemplo 123, Lima, Perú',
+        brandId: 2,
+        isActive: true
       }
     }
-  })
-  @ApiResponse({
-    status: 201,
-    description: 'Proveedor creado exitosamente',
-    type: BrandSupplier,
-    examples: {
-      'Proveedor creado': {
-        summary: 'Ejemplo de respuesta exitosa',
-        value: {
-          supplierId: 2,
-          name: 'Distribuidora Textil Nacional',
-          contactPerson: 'María García',
-          email: 'ventas@textilnacional.com',
-          phone: '9123456789',
-          address: 'Calle Comercial 456, Lima, Perú',
-          isActive: true,
-          createdAt: '2023-05-21',
-          updatedAt: '2023-05-21',
-          brand: {
-            brandId: 2,
-            name: 'Adidas'
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Datos de entrada inválidos',
-    examples: {
-      'Datos faltantes': {
-        summary: 'Error de validación',
-        value: {
-          statusCode: 400,
-          message: [
-            'name should not be empty',
-            'email must be an email',
-            'brandId should not be empty'
-          ],
-          error: 'Bad Request'
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 409, 
-    description: 'El email ya está registrado',
-    examples: {
-      'Email duplicado': {
-        summary: 'Error de conflicto',
-        value: {
-          statusCode: 409,
-          message: 'El email ya está registrado',
-          error: 'Conflict'
-        }
-      }
-    }
-  })
-  async create(
-    @Body() createBrandSupplierDto: CreateBrandSupplierDto,
-    @Request() req: { user: User },
-  ): Promise<BrandSupplier> {
-    return this.brandSuppliersService.create(createBrandSupplierDto, req.user);
   }
+})
+@ApiResponse({
+  status: 201,
+  description: 'Proveedor creado exitosamente',
+  type: BrandSupplier,
+  examples: {
+    'Proveedor creado': {
+      summary: 'Ejemplo de respuesta exitosa',
+      value: {
+        id: 2,
+        name: 'Distribuidora Textil Nacional',
+        contactPerson: 'María García',
+        email: 'ventas@textilnacional.com',
+        phone: '9123456789',
+        address: 'Calle Comercial 456, Lima, Perú',
+        isActive: true,
+        createdAt: '2023-05-21',
+        updatedAt: '2023-05-21',
+        brand: {
+          id: 2,
+          name: 'Adidas'
+        }
+      }
+    }
+  }
+})
+@ApiResponse({ 
+  status: 400, 
+  description: 'Datos de entrada inválidos',
+  examples: {
+    'Datos faltantes': {
+      summary: 'Error de validación',
+      value: {
+        statusCode: 400,
+        message: [
+          'name should not be empty',
+          'email must be an email',
+          'brandId should not be empty'
+        ],
+        error: 'Bad Request'
+      }
+    }
+  }
+})
+@ApiResponse({ 
+  status: 409, 
+  description: 'El email ya está registrado',
+  examples: {
+    'Email duplicado': {
+      summary: 'Error de conflicto',
+      value: {
+        statusCode: 409,
+        message: 'El email ya está registrado',
+        error: 'Conflict'
+      }
+    }
+  }
+})
+async create(
+  @Body() createBrandSupplierDto: CreateBrandSupplierDto,
+  @Request() req: { user: User },
+): Promise<BrandSupplier> {
+  return this.brandSuppliersService.create(createBrandSupplierDto, req.user);
+}
+
 
   @Put(':id')
   @ApiOperation({ 
