@@ -77,7 +77,7 @@ export class ProductsService {
 //     });
 // }
 
-  async findAll(filters: {
+ async findAll(filters: {
   search?: string;
   createdStartDate?: string;
   createdEndDate?: string;
@@ -107,7 +107,7 @@ export class ProductsService {
       throw new BadRequestException('No se puede buscar productos creados en el futuro.');
     }
 
-    query.andWhere(`DATE(product.createdAt) BETWEEN :createdStart AND :createdEnd`, {
+    query.andWhere(`DATE(product.created_at) BETWEEN :createdStart AND :createdEnd`, {
       createdStart: filters.createdStartDate,
       createdEnd: filters.createdEndDate,
     });
@@ -130,7 +130,7 @@ export class ProductsService {
       throw new BadRequestException('No se puede buscar productos editados en el futuro.');
     }
 
-    query.andWhere(`DATE(product.updatedAt) BETWEEN :updatedStart AND :updatedEnd`, {
+    query.andWhere(`DATE(product.updated_at) BETWEEN :updatedStart AND :updatedEnd`, {
       updatedStart: filters.updatedStartDate,
       updatedEnd: filters.updatedEndDate,
     });
@@ -139,30 +139,28 @@ export class ProductsService {
   // Búsqueda general
   if (filters.search) {
     query.andWhere(
-      `(product.code ILIKE :search OR product.product_name ILIKE :search OR product.description ILIKE :search OR product.brandName ILIKE :search OR product.supplierName ILIKE :search)`,
+      `(product.code ILIKE :search OR product.product_name ILIKE :search OR product.description ILIKE :search OR product.brand_name ILIKE :search OR product.supplier_name ILIKE :search)`,
       { search: `%${filters.search}%` }
     );
   }
 
   // Filtro por estado
   if (filters.isActive !== undefined) {
-    query.andWhere(`product.isActive = :isActive`, { isActive: filters.isActive });
+    query.andWhere(`product.product_is_active = :isActive`, { isActive: filters.isActive });
   }
 
   // Filtro por marcas
   if (filters.brandIds?.length) {
-    query.andWhere('product.brandId IN (:...brandIds)', { brandIds: filters.brandIds });
+    query.andWhere('product.brand_id IN (:...brandIds)', { brandIds: filters.brandIds });
   }
 
   // Filtro por proveedores
   if (filters.supplierIds?.length) {
-    query.andWhere('product.supplierId IN (:...supplierIds)', { supplierIds: filters.supplierIds });
+    query.andWhere('product.supplier_id IN (:...supplierIds)', { supplierIds: filters.supplierIds });
   }
 
   return query.getMany();
 }
-
-
 
   async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({ 
