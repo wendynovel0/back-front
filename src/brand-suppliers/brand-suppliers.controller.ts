@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Patch, Delete, ParseIntPipe, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Patch, Delete, ParseIntPipe, UseGuards, Request, Query, BadRequestException } from '@nestjs/common';
 import { BrandSuppliersService } from './brand-suppliers.service';
 import { CreateBrandSupplierDto } from './dto/create-brand-supplier.dto';
 import { UpdateBrandSupplierDto } from './dto/update-brand-supplier.dto';
@@ -21,10 +21,59 @@ export class BrandSuppliersController {
   description: 'Permite buscar proveedores por nombre, marca, fechas de creación/edición o marca. Todos los parámetros son opcionales.'
 })
 @ApiQuery({
+  name: 'search',
+  required: false,
+  type: String,
+  description: 'Texto para buscar en nombre del proveedor, persona de contacto, email o marca',
+  example: 'Samsung'
+})
+@ApiQuery({
+  name: 'createdStartDate',
+  required: false,
+  type: String,
+  description: 'Fecha inicial de creación (YYYY-MM-DD)',
+  example: '2023-01-01'
+})
+@ApiQuery({
+  name: 'createdEndDate',
+  required: false,
+  type: String,
+  description: 'Fecha final de creación (YYYY-MM-DD)',
+  example: '2023-12-31'
+})
+@ApiQuery({
+  name: 'updatedStartDate',
+  required: false,
+  type: String,
+  description: 'Fecha inicial de actualización (YYYY-MM-DD)',
+  example: '2023-01-01'
+})
+@ApiQuery({
+  name: 'updatedEndDate',
+  required: false,
+  type: String,
+  description: 'Fecha final de actualización (YYYY-MM-DD)',
+  example: '2023-12-31'
+})
+@ApiQuery({
+  name: 'brandIds',
+  required: false,
+  type: String,
+  description: 'IDs de marcas separados por comas',
+  example: '1,2,3'
+})
+@ApiQuery({
   name: 'isActive',
   required: false,
+  type: Boolean,
   description: 'Filtrar por si el proveedor está activo (true/false)',
   example: 'true'
+})
+@ApiResponse({
+  status: 200,
+  description: 'Lista de proveedores encontrados',
+  type: BrandSupplierView,
+  isArray: true
 })
 async findAll(
   @Query('search') search?: string,
@@ -39,7 +88,12 @@ async findAll(
     ? brandIds.split(',').map(id => parseInt(id.trim()))
     : undefined;
 
-  const isActiveBoolean = isActive !== undefined ? isActive === 'true' : undefined;
+  let isActiveBoolean: boolean | undefined = undefined;
+  if (isActive === 'true') isActiveBoolean = true;
+  else if (isActive === 'false') isActiveBoolean = false;
+  else if (isActive !== undefined) {
+    throw new BadRequestException('El valor de isActive debe ser "true" o "false".');
+  }
 
   return this.brandSuppliersService.findAll({
     search,
