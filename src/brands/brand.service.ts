@@ -141,26 +141,29 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
   async findAllWithFilters(filters: {
   brandName?: string;
   supplierId?: number;
+  isActive?: boolean;
   createdStartDate?: string;
   createdEndDate?: string;
   updatedStartDate?: string;
   updatedEndDate?: string;
 }): Promise<BrandView[]> {
-
   const query = this.brandsViewRepository.createQueryBuilder('brand');
-
-  // Validaciones
   const now = new Date();
 
   if (filters.brandName) {
-  query.andWhere('LOWER(brand.brand_name) LIKE LOWER(:brandName)', {
-    brandName: `%${filters.brandName}%`,
-  });
-}
+    query.andWhere('LOWER(brand.brand_name) LIKE LOWER(:brandName)', {
+      brandName: `%${filters.brandName}%`,
+    });
+  }
+
+  if (filters.isActive !== undefined) {
+    query.andWhere('brand.brand_is_active = :isActive', { isActive: filters.isActive });
+  }
 
   if (filters.createdStartDate && !filters.createdEndDate) {
     throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio para "created_at".');
   }
+
   if (filters.updatedStartDate && !filters.updatedEndDate) {
     throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio para "updated_at".');
   }
@@ -205,17 +208,16 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
 
   const brands = await query.orderBy('brand.created_at', 'DESC').getMany();
 
-  // Formateo en snake_case
   return brands.map(brand => ({
-  brand_id: brand.brand_id,
-  brand_name: brand.brand_name,
-  description: brand.description,
-  brand_is_active: brand.brand_is_active,
-  created_at: brand.created_at,
-  updated_at: brand.updated_at,
-  supplier_id: brand.supplier_id,
-  supplier_name: brand.supplier_name,
-  supplier_is_active: brand.supplier_is_active,
-}));
+    brand_id: brand.brand_id,
+    brand_name: brand.brand_name,
+    description: brand.description,
+    brand_is_active: brand.brand_is_active,
+    created_at: brand.created_at,
+    updated_at: brand.updated_at,
+    supplier_id: brand.supplier_id,
+    supplier_name: brand.supplier_name,
+    supplier_is_active: brand.supplier_is_active,
+  }));
 }
 }

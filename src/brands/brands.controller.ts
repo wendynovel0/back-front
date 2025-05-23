@@ -36,10 +36,11 @@ import { BrandView } from './entities/brands-view.entity';
 export class BrandsController {
   constructor(private readonly brandsService: BrandService) {} // Nombre corregido
 
-  @Get()
+ @Get()
 @ApiOperation({ summary: 'Obtener marcas con filtros' })
 @ApiQuery({ name: 'brandName', required: false, type: String, description: 'Nombre de la marca (parcial o completo)' })
 @ApiQuery({ name: 'supplierId', required: false, type: Number, description: 'ID del proveedor' })
+@ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Estado activo de la marca (true o false)' })
 @ApiQuery({ name: 'createdStartDate', required: false, type: String, description: 'Fecha inicial de creación (YYYY-MM-DD)' })
 @ApiQuery({ name: 'createdEndDate', required: false, type: String, description: 'Fecha final de creación (YYYY-MM-DD)' })
 @ApiQuery({ name: 'updatedStartDate', required: false, type: String, description: 'Fecha inicial de actualización (YYYY-MM-DD)' })
@@ -53,6 +54,7 @@ export class BrandsController {
 async findAll(
   @Query('brandName') brandName?: string,
   @Query('supplierId') supplierId?: number,
+  @Query('isActive') isActive?: boolean,
   @Query('createdStartDate') createdStartDate?: string,
   @Query('createdEndDate') createdEndDate?: string,
   @Query('updatedStartDate') updatedStartDate?: string,
@@ -66,6 +68,7 @@ async findAll(
   return this.brandsService.findAllWithFilters({
     brandName,
     supplierId,
+    isActive,
     createdStartDate,
     createdEndDate,
     updatedStartDate,
