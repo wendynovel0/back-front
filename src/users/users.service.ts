@@ -28,24 +28,27 @@ export class UserService {
   }
 
   async createWithAudit(
-    createUserDto: CreateUserDto,
-    performedBy: number,
-    ip?: string,
-  ): Promise<User> {
-    const user = this.userRepository.create(createUserDto);
-    const savedUser = await this.userRepository.save(user);
+  createUserDto: CreateUserDto,
+  performedBy: number,
+  ip?: string,
+): Promise<User> {
+  const hashedPassword = await bcrypt.hash(createUserDto.password_hash, 10); // 10 es el salt rounds
+  createUserDto.password_hash = hashedPassword;
 
-    await this.actionLogsService.logAction({
-      userId: performedBy,
-      actionType: 'CREATE',
-      entityType: 'user',
-      entityId: savedUser.user_id,
-      newValue: savedUser,
-      ipAddress: ip,
-    });
+  const user = this.userRepository.create(createUserDto);
+  const savedUser = await this.userRepository.save(user);
 
-    return savedUser;
-  }
+  await this.actionLogsService.logAction({
+    userId: performedBy,
+    actionType: 'CREATE',
+    entityType: 'user',
+    entityId: savedUser.user_id,
+    newValue: savedUser,
+    ipAddress: ip,
+  });
+
+  return savedUser;
+}
 
   findAll(): Promise<User[]> {
     return this.userRepository.find();

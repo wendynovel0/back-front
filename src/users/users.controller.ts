@@ -100,7 +100,12 @@ export class UserController {
       }
     }
 
-    const isActiveBoolean = isActive ? isActive.toLowerCase() === 'true' : undefined;
+    const isActiveLower = isActive?.toLowerCase();
+    const isActiveBoolean =
+      isActiveLower === 'true' ? true :
+      isActiveLower === 'false' ? false :
+      undefined;
+
 
     return this.userService.findAllWithFilters({
       email,
