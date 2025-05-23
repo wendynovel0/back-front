@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Brand } from './entities/brand.entity';
-import { BrandsView } from './entities/brands-view.entity';
+import { BrandView } from './entities/brands-view.entity';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
@@ -13,8 +13,8 @@ export class BrandService {
     @InjectRepository(Brand)
     private readonly brandRepository: Repository<Brand>,
 
-    @InjectRepository(BrandsView)
-    private readonly brandsViewRepository: Repository<BrandsView>,
+    @InjectRepository(BrandView)
+    private readonly brandsViewRepository: Repository<BrandView>,
 
     private readonly actionLogsService: ActionLogsService,
   ) {}
@@ -145,7 +145,7 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
   createdEndDate?: string;
   updatedStartDate?: string;
   updatedEndDate?: string;
-}): Promise<BrandsView[]> {
+}): Promise<BrandView[]> {
 
   const query = this.brandsViewRepository.createQueryBuilder('brand');
 
@@ -207,13 +207,15 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
 
   // Formateo en snake_case
   return brands.map(brand => ({
-    brand_id: brand.brand_id,
-    brand_name: brand.brand_name,
-    description: brand.description,
-    created_at: brand.created_at,
-    updated_at: brand.updated_at,
-    supplier_id: brand.supplier_id,
-    supplier_name: brand.supplier_name,
-  }));
+  brand_id: brand.brand_id,
+  brand_name: brand.brand_name,
+  description: brand.description,
+  brand_is_active: brand.brand_is_active,
+  created_at: brand.created_at,
+  updated_at: brand.updated_at,
+  supplier_id: brand.supplier_id,
+  supplier_name: brand.supplier_name,
+  supplier_is_active: brand.supplier_is_active,
+}));
 }
 }

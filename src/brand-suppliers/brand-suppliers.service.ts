@@ -6,15 +6,15 @@ import { CreateBrandSupplierDto } from './dto/create-brand-supplier.dto';
 import { UpdateBrandSupplierDto } from './dto/update-brand-supplier.dto';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
-import { BrandSuppliersView } from './entities/brand-suppliers-view.entity';
+import { BrandSupplierView } from './entities/brand-suppliers-view.entity';
 
 @Injectable()
 export class BrandSuppliersService {
   constructor(
     @InjectRepository(BrandSupplier)
     private readonly brandSupplierRepository: Repository<BrandSupplier>,
-    @InjectRepository(BrandSuppliersView)
-    private readonly brandSuppliersViewRepository: Repository<BrandSuppliersView>,
+    @InjectRepository(BrandSupplierView)
+    private readonly brandSuppliersViewRepository: Repository<BrandSupplierView>,
     private readonly actionLogsService: ActionLogsService,
     private readonly dataSource: DataSource,
   ) {}
@@ -26,7 +26,7 @@ export class BrandSuppliersService {
   updatedStartDate?: string;
   updatedEndDate?: string;
   brandIds?: number[];
-}): Promise<BrandSuppliersView[]> {
+}): Promise<BrandSupplierView[]> {
   const {
     search,
     createdStartDate,

@@ -2,39 +2,45 @@ import { ViewEntity, ViewColumn } from 'typeorm';
 
 @ViewEntity({ name: 'products_view' })
 export class ProductView {
-  @ViewColumn({ name: 'product_id' })
-  productId: number;
+  @ViewColumn()
+  product_id: number;
 
-  @ViewColumn({ name: 'code' })
+  @ViewColumn()
   code: string;
 
-  @ViewColumn({ name: 'product_name' })
-  productName: string;
+  @ViewColumn()
+  product_name: string;
 
-  @ViewColumn({ name: 'description' })
-  description?: string;
+  @ViewColumn()
+  description: string;
 
-  @ViewColumn({ name: 'price' })
+  @ViewColumn()
   price: number;
 
-  @ViewColumn({ name: 'created_at' })
-  createdAt: Date;
+  @ViewColumn()
+  product_is_active: boolean;
 
-  @ViewColumn({ name: 'updated_at' })
-  updatedAt: Date;
+  @ViewColumn()
+  created_at: Date;
 
-  @ViewColumn({ name: 'is_active' })
-  isActive: boolean;
+  @ViewColumn()
+  updated_at: Date;
 
-  @ViewColumn({ name: 'brand_id' })
-  brandId: number;
+  @ViewColumn()
+  brand_id: number;
 
-  @ViewColumn({ name: 'brand_name' })
-  brandName: string;
+  @ViewColumn()
+  brand_name: string;
 
-  @ViewColumn({ name: 'supplier_id' })
-  supplierId: number;
+  @ViewColumn()
+  brand_is_active: boolean;
 
-  @ViewColumn({ name: 'supplier_name' })
-  supplierName: string;
+  @ViewColumn()
+  supplier_id: number;
+
+  @ViewColumn()
+  supplier_name: string;
+
+  @ViewColumn()
+  supplier_is_active: boolean;
 }

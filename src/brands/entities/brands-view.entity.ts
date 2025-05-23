@@ -1,9 +1,7 @@
 import { ViewEntity, ViewColumn } from 'typeorm';
 
-@ViewEntity({
-  name: 'brands_view',
-})
-export class BrandsView {
+@ViewEntity({ name: 'brands_view' })
+export class BrandView {
   @ViewColumn()
   brand_id: number;
 
@@ -12,6 +10,9 @@ export class BrandsView {
 
   @ViewColumn()
   description: string;
+
+  @ViewColumn()
+  brand_is_active: boolean;
 
   @ViewColumn()
   created_at: Date;
@@ -24,4 +25,7 @@ export class BrandsView {
 
   @ViewColumn()
   supplier_name: string;
+
+  @ViewColumn()
+  supplier_is_active: boolean;
 }
