@@ -37,40 +37,41 @@ export class BrandsController {
   constructor(private readonly brandsService: BrandService) {} // Nombre corregido
 
   @Get()
-  @ApiOperation({ summary: 'Obtener marcas con filtros' })
-  @ApiQuery({ name: 'name', required: false, type: String, description: 'Nombre de la marca' })
-  @ApiQuery({ name: 'supplierName', required: false, type: String, description: 'Nombre del proveedor' })
-  @ApiQuery({ name: 'createdStartDate', required: false, type: String, description: 'Fecha inicial de creación (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'createdEndDate', required: false, type: String, description: 'Fecha final de creación (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'updatedStartDate', required: false, type: String, description: 'Fecha inicial de actualización (YYYY-MM-DD)' })
-  @ApiQuery({ name: 'updatedEndDate', required: false, type: String, description: 'Fecha final de actualización (YYYY-MM-DD)' })
-  @ApiResponse({
-    status: 200,
-    description: 'Lista filtrada de marcas activas',
-    type: [BrandsView],
-  })
-  @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
-  async findAll(
-    @Query('name') name?: string,
-    @Query('supplierName') supplierName?: string,
-    @Query('createdStartDate') createdStartDate?: string,
-    @Query('createdEndDate') createdEndDate?: string,
-    @Query('updatedStartDate') updatedStartDate?: string,
-    @Query('updatedEndDate') updatedEndDate?: string,
-    @CurrentUser() user?: User,
-  ): Promise<BrandsView[]> {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o usuario no autenticado');
-    }
-
-    return this.brandsService.findAllWithFilters({
-      name,
-      createdStartDate,
-      createdEndDate,
-      updatedStartDate,
-      updatedEndDate,
-    });
+@ApiOperation({ summary: 'Obtener marcas con filtros' })
+@ApiQuery({ name: 'brandName', required: false, type: String, description: 'Nombre de la marca (parcial o completo)' })
+@ApiQuery({ name: 'supplierId', required: false, type: Number, description: 'ID del proveedor' })
+@ApiQuery({ name: 'createdStartDate', required: false, type: String, description: 'Fecha inicial de creación (YYYY-MM-DD)' })
+@ApiQuery({ name: 'createdEndDate', required: false, type: String, description: 'Fecha final de creación (YYYY-MM-DD)' })
+@ApiQuery({ name: 'updatedStartDate', required: false, type: String, description: 'Fecha inicial de actualización (YYYY-MM-DD)' })
+@ApiQuery({ name: 'updatedEndDate', required: false, type: String, description: 'Fecha final de actualización (YYYY-MM-DD)' })
+@ApiResponse({
+  status: 200,
+  description: 'Lista filtrada de marcas',
+  type: [BrandsView],
+})
+@ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
+async findAll(
+  @Query('brandName') brandName?: string,
+  @Query('supplierId') supplierId?: number,
+  @Query('createdStartDate') createdStartDate?: string,
+  @Query('createdEndDate') createdEndDate?: string,
+  @Query('updatedStartDate') updatedStartDate?: string,
+  @Query('updatedEndDate') updatedEndDate?: string,
+  @CurrentUser() user?: User,
+): Promise<BrandsView[]> {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
+
+  return this.brandsService.findAllWithFilters({
+    brandName,
+    supplierId,
+    createdStartDate,
+    createdEndDate,
+    updatedStartDate,
+    updatedEndDate,
+  });
+}
 
 
   // @Get('search')

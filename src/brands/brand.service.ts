@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Brand } from './entities/brand.entity';
@@ -139,49 +139,81 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
 
 
   async findAllWithFilters(filters: {
-    name?: string;
-    createdStartDate?: string;
-    createdEndDate?: string;
-    updatedStartDate?: string;
-    updatedEndDate?: string;
-    isActive?: boolean;
-  }): Promise<BrandsView[]> {
-    const query = this.brandsViewRepository.createQueryBuilder('brand');
+  brandName?: string;
+  supplierId?: number;
+  createdStartDate?: string;
+  createdEndDate?: string;
+  updatedStartDate?: string;
+  updatedEndDate?: string;
+}): Promise<BrandsView[]> {
 
-    if (filters.name) {
-      query.andWhere('brand.name ILIKE :name', { name: `%${filters.name}%` });
-    }
+  const query = this.brandsViewRepository.createQueryBuilder('brand');
 
-    if (filters.createdStartDate) {
-      query.andWhere('brand.createdAt >= :createdStartDate', {
-        createdStartDate: filters.createdStartDate,
-      });
-    }
+  // Validaciones
+  const now = new Date();
 
-    if (filters.createdEndDate) {
-      query.andWhere('brand.createdAt <= :createdEndDate', {
-        createdEndDate: filters.createdEndDate,
-      });
-    }
+  if (filters.brandName) {
+  query.andWhere('LOWER(brand.brand_name) LIKE LOWER(:brandName)', {
+    brandName: `%${filters.brandName}%`,
+  });
+}
 
-    if (filters.updatedStartDate) {
-      query.andWhere('brand.updatedAt >= :updatedStartDate', {
-        updatedStartDate: filters.updatedStartDate,
-      });
-    }
-
-    if (filters.updatedEndDate) {
-      query.andWhere('brand.updatedAt <= :updatedEndDate', {
-        updatedEndDate: filters.updatedEndDate,
-      });
-    }
-
-    if (filters.isActive !== undefined) {
-      query.andWhere('brand.isActive = :isActive', {
-        isActive: filters.isActive,
-      });
-    }
-
-    return query.getMany();
+  if (filters.createdStartDate && !filters.createdEndDate) {
+    throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio para "created_at".');
   }
+  if (filters.updatedStartDate && !filters.updatedEndDate) {
+    throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio para "updated_at".');
+  }
+
+  if (filters.createdStartDate && filters.createdEndDate) {
+    const start = new Date(filters.createdStartDate);
+    const end = new Date(filters.createdEndDate);
+
+    if (start > end) {
+      throw new BadRequestException('La fecha de inicio de creación no puede ser mayor que la de fin.');
+    }
+    if (start > now || end > now) {
+      throw new BadRequestException('No se permiten fechas futuras para "created_at".');
+    }
+
+    query.andWhere('brand.created_at BETWEEN :start AND :end', {
+      start,
+      end,
+    });
+  }
+
+  if (filters.updatedStartDate && filters.updatedEndDate) {
+    const startUpdate = new Date(filters.updatedStartDate);
+    const endUpdate = new Date(filters.updatedEndDate);
+
+    if (startUpdate > endUpdate) {
+      throw new BadRequestException('La fecha de inicio de actualización no puede ser mayor que la de fin.');
+    }
+    if (startUpdate > now || endUpdate > now) {
+      throw new BadRequestException('No se permiten fechas futuras para "updated_at".');
+    }
+
+    query.andWhere('brand.updated_at BETWEEN :startUpdate AND :endUpdate', {
+      startUpdate,
+      endUpdate,
+    });
+  }
+
+  if (filters.supplierId) {
+    query.andWhere('brand.supplier_id = :supplierId', { supplierId: filters.supplierId });
+  }
+
+  const brands = await query.orderBy('brand.created_at', 'DESC').getMany();
+
+  // Formateo en snake_case
+  return brands.map(brand => ({
+    brand_id: brand.brand_id,
+    brand_name: brand.brand_name,
+    description: brand.description,
+    created_at: brand.created_at,
+    updated_at: brand.updated_at,
+    supplier_id: brand.supplier_id,
+    supplier_name: brand.supplier_name,
+  }));
+}
 }
