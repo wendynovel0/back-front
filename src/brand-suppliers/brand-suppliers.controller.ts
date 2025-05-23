@@ -146,14 +146,6 @@ async findAll(
 @ApiBody({ 
   type: CreateBrandSupplierDto,
   examples: {
-    'Proveedor básico': {
-      summary: 'Ejemplo mínimo requerido',
-      value: {
-        name: 'Proveedor Ejemplo',
-        email: 'proveedor@ejemplo.com',
-        brandId: 1
-      }
-    },
     'Proveedor completo': {
       summary: 'Ejemplo con todos los campos',
       value: {
