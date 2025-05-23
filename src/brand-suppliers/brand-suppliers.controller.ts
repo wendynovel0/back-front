@@ -16,52 +16,11 @@ import { BrandSupplierView } from './entities/brand-suppliers-view.entity';
 export class BrandSuppliersController {
   constructor(private readonly brandSuppliersService: BrandSuppliersService) {}
 
-@Get()
-@ApiOperation({
-  summary: 'Buscar proveedores con filtros combinados',
-  description: 'Permite buscar proveedores por nombre, marca, fechas de creación/edición o marca. Todos los parámetros son opcionales.'
-})
 @ApiQuery({
-  name: 'search',
+  name: 'isActive',
   required: false,
-  description: 'Texto para buscar en nombre del proveedor o de la marca',
-  example: 'Samsung'
-})
-@ApiQuery({
-  name: 'createdStartDate',
-  required: false,
-  description: 'Fecha inicial de creación (YYYY-MM-DD)',
-  example: '2023-01-01'
-})
-@ApiQuery({
-  name: 'createdEndDate',
-  required: false,
-  description: 'Fecha final de creación (YYYY-MM-DD)',
-  example: '2023-12-31'
-})
-@ApiQuery({
-  name: 'updatedStartDate',
-  required: false,
-  description: 'Fecha inicial de actualización (YYYY-MM-DD)',
-  example: '2023-01-01'
-})
-@ApiQuery({
-  name: 'updatedEndDate',
-  required: false,
-  description: 'Fecha final de actualización (YYYY-MM-DD)',
-  example: '2023-12-31'
-})
-@ApiQuery({
-  name: 'brandIds',
-  required: false,
-  description: 'IDs de marcas separados por comas',
-  example: '1,2,3'
-})
-@ApiResponse({
-  status: 200,
-  description: 'Lista de proveedores encontrados',
-  type: BrandSupplierView,
-  isArray: true
+  description: 'Filtrar por si el proveedor está activo (true/false)',
+  example: 'true'
 })
 async findAll(
   @Query('search') search?: string,
@@ -69,11 +28,14 @@ async findAll(
   @Query('createdEndDate') createdEndDate?: string,
   @Query('updatedStartDate') updatedStartDate?: string,
   @Query('updatedEndDate') updatedEndDate?: string,
-  @Query('brandIds') brandIds?: string
+  @Query('brandIds') brandIds?: string,
+  @Query('isActive') isActive?: string
 ): Promise<BrandSupplierView[]> {
   const brandIdsArray = brandIds
     ? brandIds.split(',').map(id => parseInt(id.trim()))
     : undefined;
+
+  const isActiveBoolean = isActive !== undefined ? isActive === 'true' : undefined;
 
   return this.brandSuppliersService.findAll({
     search,
@@ -81,9 +43,11 @@ async findAll(
     createdEndDate,
     updatedStartDate,
     updatedEndDate,
-    brandIds: brandIdsArray
+    brandIds: brandIdsArray,
+    isActive: isActiveBoolean,
   });
 }
+
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener un proveedor por ID' })
