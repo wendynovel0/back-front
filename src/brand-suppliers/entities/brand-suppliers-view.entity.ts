@@ -1,36 +1,40 @@
-// src/brand-suppliers/entities/brand-suppliers-view.entity.ts
+import { ViewEntity, ViewColumn } from 'typeorm';
 
-import { Column, Entity, PrimaryColumn } from 'typeorm';
+@ViewEntity({ name: 'brand_suppliers_view' })
+export class BrandSupplierView {
+  @ViewColumn()
+  supplier_id: number;
 
-@Entity('brand_suppliers_view')
-export class BrandSuppliersView {
-  @PrimaryColumn({ name: 'supplier_id' })
-  supplierId: number;
+  @ViewColumn()
+  supplier_name: string;
 
-  @Column({ name: 'supplier_name' })
-  supplierName: string;
+  @ViewColumn()
+  contact_person: string;
 
-  @Column({ name: 'contact_person' })
-  contactPerson: string;
-
-  @Column()
+  @ViewColumn()
   email: string;
 
-  @Column()
+  @ViewColumn()
   phone: string;
 
-  @Column()
+  @ViewColumn()
   address: string;
 
-  @Column({ name: 'created_at', type: 'timestamp' })
-  createdAt: Date;
+  @ViewColumn()
+  supplier_is_active: boolean;
 
-  @Column({ name: 'updated_at', type: 'timestamp' })
-  updatedAt: Date;
+  @ViewColumn()
+  created_at: Date;
 
-  @Column({ name: 'brand_id' })
-  brandId: number;
+  @ViewColumn()
+  updated_at: Date;
 
-  @Column({ name: 'brand_name' })
-  brandName: string;
+  @ViewColumn()
+  brand_id: number;
+
+  @ViewColumn()
+  brand_name: string;
+
+  @ViewColumn()
+  brand_is_active: boolean;
 }

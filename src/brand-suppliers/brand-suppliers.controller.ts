@@ -6,7 +6,7 @@ import { ApiOperation, ApiResponse, ApiTags, ApiParam, ApiBody, ApiQuery, ApiBea
 import { BrandSupplier } from './entities/brand-supplier.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { User } from '../users/entities/user.entity';
-import { BrandSuppliersView } from './entities/brand-suppliers-view.entity';
+import { BrandSupplierView } from './entities/brand-suppliers-view.entity';
 
 
 @ApiTags('Proveedores de Marcas')
@@ -60,7 +60,7 @@ export class BrandSuppliersController {
 @ApiResponse({
   status: 200,
   description: 'Lista de proveedores encontrados',
-  type: BrandSuppliersView,
+  type: BrandSupplierView,
   isArray: true
 })
 async findAll(
@@ -70,7 +70,7 @@ async findAll(
   @Query('updatedStartDate') updatedStartDate?: string,
   @Query('updatedEndDate') updatedEndDate?: string,
   @Query('brandIds') brandIds?: string
-): Promise<BrandSuppliersView[]> {
+): Promise<BrandSupplierView[]> {
   const brandIdsArray = brandIds
     ? brandIds.split(',').map(id => parseInt(id.trim()))
     : undefined;

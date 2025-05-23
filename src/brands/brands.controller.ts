@@ -27,7 +27,7 @@ import { Brand } from './entities/brand.entity';
 import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from '../users/entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { BrandsView } from './entities/brands-view.entity';
+import { BrandView } from './entities/brands-view.entity';
 
 @ApiTags('Brands')
 @ApiBearerAuth()
@@ -47,7 +47,7 @@ export class BrandsController {
 @ApiResponse({
   status: 200,
   description: 'Lista filtrada de marcas',
-  type: [BrandsView],
+  type: [BrandView],
 })
 @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
 async findAll(
@@ -58,7 +58,7 @@ async findAll(
   @Query('updatedStartDate') updatedStartDate?: string,
   @Query('updatedEndDate') updatedEndDate?: string,
   @CurrentUser() user?: User,
-): Promise<BrandsView[]> {
+): Promise<BrandView[]> {
   if (!user) {
     throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
