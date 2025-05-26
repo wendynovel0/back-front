@@ -212,12 +212,10 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
     brand_id: brand.brand_id,
     brand_name: brand.brand_name,
     description: brand.description,
-    brand_is_active: brand.brand_is_active,
     created_at: brand.created_at,
     updated_at: brand.updated_at,
     supplier_id: brand.supplier_id,
     supplier_name: brand.supplier_name,
-    supplier_is_active: brand.supplier_is_active,
   }));
 }
 }
