@@ -21,9 +21,6 @@ export class BrandSupplierView {
   address: string;
 
   @ViewColumn()
-  supplier_is_active: boolean;
-
-  @ViewColumn()
   created_at: Date;
 
   @ViewColumn()
@@ -34,7 +31,4 @@ export class BrandSupplierView {
 
   @ViewColumn()
   brand_name: string;
-
-  @ViewColumn()
-  brand_is_active: boolean;
 }

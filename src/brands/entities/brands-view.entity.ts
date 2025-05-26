@@ -12,9 +12,6 @@ export class BrandView {
   description: string;
 
   @ViewColumn()
-  brand_is_active: boolean;
-
-  @ViewColumn()
   created_at: Date;
 
   @ViewColumn()
@@ -25,7 +22,4 @@ export class BrandView {
 
   @ViewColumn()
   supplier_name: string;
-
-  @ViewColumn()
-  supplier_is_active: boolean;
 }
