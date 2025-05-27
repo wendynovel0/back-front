@@ -269,4 +269,15 @@ export class ProductsService {
 
     return this.productRepository.save(product);
   }
+   async findOneFromView(productId: number): Promise<ProductView> {
+    const product = await this.productViewRepository.findOne({
+      where: { product_id: productId },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
+    }
+
+    return product;
+  }
 }
