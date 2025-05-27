@@ -19,7 +19,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
 @Get('view/:id')
-  @ApiOperation({ summary: 'Buscar producto por ID desde la vista' })
+  @ApiOperation({ summary: 'Buscar producto por ID' })
   @ApiOkResponse({ type: ProductView })
   @ApiNotFoundResponse({ description: 'Producto no encontrado' })
   async findOneFromView(@Param('id', ParseIntPipe) id: number): Promise<ProductView> {
