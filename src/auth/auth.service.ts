@@ -56,37 +56,41 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto): Promise<{ token: string; user: Omit<User, 'password_hash'> }> {
-    try {
-      const normalizedEmail = loginDto.email.toLowerCase().trim();
-      const user = await this.validateUser(normalizedEmail, loginDto.password);
+  async login(loginDto: LoginDto): Promise<{
+  expires_in: number;
+  login_token: string;
+  name: string;
+  success: boolean;
+}> {
+  try {
+    const normalizedEmail = loginDto.email.toLowerCase().trim();
+    const user = await this.validateUser(normalizedEmail, loginDto.password);
 
-      const payload = {
-        sub: user.user_id,
-        email: user.email,
-        is_active: user.is_active,
-      };
+    const payload = {
+      sub: user.user_id,
+      email: user.email,
+      is_active: user.is_active,
+    };
 
-      return {
-        token: this.jwtService.sign(payload),
-        user: {
-          user_id: user.user_id,
-          email: user.email,
-          is_active: user.is_active,
-          created_at: user.created_at,
-          updated_at: user.updated_at,
-        },
-      };
-    } catch (error) {
-      console.error('Error en login:', error);
+    const token = this.jwtService.sign(payload, { expiresIn: '1h' }); // 3600 segundos
 
-      if (error instanceof UnauthorizedException) {
-        throw new UnauthorizedException('Email o contraseña incorrectos');
-      }
+    return {
+      expires_in: 3600, // o 1000 si así lo prefieres
+      login_token: token,
+      name: user.email ?? user.email, // asegúrate que user tenga esta propiedad
+      success: true,
+    };
+  } catch (error) {
+    console.error('Error en login:', error);
 
-      throw new InternalServerErrorException('Error al iniciar sesión');
+    if (error instanceof UnauthorizedException) {
+      throw new UnauthorizedException('Email o contraseña incorrectos');
     }
+
+    throw new InternalServerErrorException('Error al iniciar sesión');
   }
+}
+
   
 
   private async validateUser(email: string, password: string): Promise<User> {
