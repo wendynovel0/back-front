@@ -152,17 +152,18 @@ export class UserService {
   }
 
   async findByEmailWithPassword(email: string): Promise<User | null> {
-    try {
-      return await this.userRepository
-        .createQueryBuilder('user')
-        .where('LOWER(user.email) = LOWER(:email)', { email })
-        .addSelect('user.password_hash')
-        .getOne();
-    } catch (error) {
-      console.error('Error finding user by email:', error);
-      return null;
-    }
+  try {
+    return await this.userRepository
+      .createQueryBuilder('user')
+      .addSelect(['user.email', 'user.password_hash']) // Asegura que email esté incluido
+      .where('LOWER(user.email) = LOWER(:email)', { email })
+      .getOne();
+  } catch (error) {
+    console.error('Error finding user by email:', error);
+    return null;
   }
+}
+
 
   async findAllWithFilters(filters: {
   email?: string;
