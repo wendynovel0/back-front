@@ -7,6 +7,9 @@ import { Product } from './entities/product.entity';
 import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from '../users/entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { ParseIntPipe } from '@nestjs/common';
+import { ApiOkResponse, ApiNotFoundResponse } from '@nestjs/swagger';
+import { ProductView } from './entities/product-view.entity';
 
 @ApiTags('Productos')
 @ApiBearerAuth()
@@ -15,6 +18,13 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
+@Get('view/:id')
+  @ApiOperation({ summary: 'Buscar producto por ID desde la vista' })
+  @ApiOkResponse({ type: ProductView })
+  @ApiNotFoundResponse({ description: 'Producto no encontrado' })
+  async findOneFromView(@Param('id', ParseIntPipe) id: number): Promise<ProductView> {
+    return this.productsService.findOneFromView(id);
+  }
   @Get()
 @ApiOperation({ 
   summary: 'Buscar productos con filtros combinados',
