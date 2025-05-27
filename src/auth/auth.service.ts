@@ -75,9 +75,9 @@ export class AuthService {
     const token = this.jwtService.sign(payload, { expiresIn: '1h' }); // 3600 segundos
 
     return {
-      expires_in: 3600, // o 1000 si así lo prefieres
+      expires_in: 3600,
       login_token: token,
-      name: user.email ?? user.email, // asegúrate que user tenga esta propiedad
+      name: user.email,
       success: true,
     };
   } catch (error) {
@@ -90,6 +90,7 @@ export class AuthService {
     throw new InternalServerErrorException('Error al iniciar sesión');
   }
 }
+
 
   
 
