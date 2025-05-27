@@ -6,6 +6,10 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
+import { BlacklistedToken } from './entities/blacklisted-token.entity';
+import { ConfigService } from '@nestjs/config';
 
 import { UserService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
@@ -17,9 +21,21 @@ export class AuthService {
   private readonly SALT_ROUNDS = 12;
 
   constructor(
-    private readonly usersService: UserService,
-    private readonly jwtService: JwtService,
-  ) {}
+  private readonly usersService: UserService,
+  private readonly jwtService: JwtService,
+  private readonly configService: ConfigService,
+  @InjectRepository(BlacklistedToken)
+  private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
+) {}
+
+
+  async logout(token: string): Promise<void> {
+    const decoded = this.jwtService.decode(token) as any;
+    const expiresAt = new Date((decoded.exp ?? 0) * 1000);
+
+    const entry = this.blacklistedTokenRepo.create({ token, expiresAt });
+    await this.blacklistedTokenRepo.save(entry);
+  }
 
   async register(registerDto: RegisterDto): Promise<Omit<User, 'password_hash'>> {
     const { email, password } = registerDto;
@@ -211,5 +227,11 @@ export class AuthService {
       },
       hashAnalysis,
     };
+    
   }
+  async isBlacklisted(token: string): Promise<boolean> {
+  const entry = await this.blacklistedTokenRepo.findOne({ where: { token } });
+  return !!entry;
+}
+
 }
