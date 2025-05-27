@@ -40,55 +40,34 @@ export class AuthController {
   }
 
   @Post('login')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Autenticación de usuario' })
-  @ApiBody({ 
-    type: LoginDto,
-    examples: {
-      example1: {
-        summary: 'Ejemplo de login',
-        value: {
-          email: 'usuario@ejemplo.com',
-          password: 'PasswordSeguro123!'
-        }
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Autenticación de usuario' })
+@ApiBody({ 
+  type: LoginDto,
+  examples: {
+    example1: {
+      summary: 'Ejemplo de login',
+      value: {
+        email: 'usuario@ejemplo.com',
+        password: 'PasswordSeguro123!'
       }
-    }
-  })
-  @ApiResponse({ 
-    status: HttpStatus.OK,
-    description: 'Autenticación exitosa',
-    schema: {
-      example: {
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        user: {
-          user_id: 1,
-          email: 'usuario@ejemplo.com',
-          is_active: true
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: HttpStatus.UNAUTHORIZED, 
-    description: 'Credenciales inválidas' 
-  })
-  @ApiResponse({ 
-    status: HttpStatus.FORBIDDEN, 
-    description: 'Cuenta desactivada' 
-  })
-  async login(@Body() loginDto: LoginDto) {
-    try {
-      const result = await this.authService.login(loginDto);
-      return {
-        token: result.token,
-        user: {
-          user_id: result.user.user_id,
-          email: result.user.email,
-          is_active: result.user.is_active
-        }
-      };
-    } catch (error) {
-      throw error;
     }
   }
+})
+@ApiResponse({
+  status: HttpStatus.OK,
+  schema: {
+    example: {
+      expires_in: 3600,
+      login_token: 'tokenEjemplo',
+      name: 'usuario@ejemplo.com',
+      success: true,
+    }
+  }
+})
+@ApiResponse({ status: HttpStatus.UNAUTHORIZED, description: 'Credenciales inválidas' })
+@ApiResponse({ status: HttpStatus.FORBIDDEN, description: 'Cuenta desactivada' })
+async login(@Body() loginDto: LoginDto) {
+  return this.authService.login(loginDto);
+}
 }
