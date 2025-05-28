@@ -95,8 +95,6 @@ export class AuthController {
       example: {
         expires_in: 3600,
         login_token: 'tokenEjemplo',
-        name: 'usuario@ejemplo.com',
-        success: true,
       },
     },
   })

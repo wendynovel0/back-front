@@ -52,39 +52,42 @@ export class AuthService {
 
 
   async register(registerDto: RegisterDto): Promise<any> {
-    const { email, password } = registerDto;
+  const { email, password } = registerDto;
 
-    if (!email || !password) {
-      throw new UnauthorizedException('Se requieren email y contraseña');
-    }
-
-    if (password.length < 8) {
-      throw new UnauthorizedException('La contraseña debe tener al menos 8 caracteres');
-    }
-
-    const normalizedEmail = email.toLowerCase().trim();
-
-    const existingUser = await this.usersService.findByEmail(normalizedEmail);
-    if (existingUser) {
-      throw new ConflictException('El email ya está registrado');
-    }
-
-    try {
-      const hashedPassword = await this.hashPassword(password);
-
-      const newUser = await this.usersService.create({
-        email: normalizedEmail,
-        password_hash: hashedPassword,
-        is_active: true,
-      });
-
-      const { password_hash, ...result } = newUser;
-      return formatResponse([result]);
-    } catch (error) {
-      console.error('Error en registro:', error);
-      throw new InternalServerErrorException('Error al crear el usuario');
-    }
+  if (!email || !password) {
+    throw new UnauthorizedException('Se requieren email y contraseña');
   }
+
+  if (password.length < 8) {
+    throw new UnauthorizedException('La contraseña debe tener al menos 8 caracteres');
+  }
+
+  const normalizedEmail = email.toLowerCase().trim();
+
+  const existingUser = await this.usersService.findByEmail(normalizedEmail);
+  if (existingUser) {
+    throw new ConflictException('El email ya está registrado');
+  }
+
+  try {
+    const hashedPassword = await this.hashPassword(password);
+
+    await this.usersService.create({
+      email: normalizedEmail,
+      password_hash: hashedPassword,
+      is_active: true,
+    });
+
+    return {
+      success: true,
+      message: 'Usuario agregado correctamente',
+    };
+  } catch (error) {
+    console.error('Error en registro:', error);
+    throw new InternalServerErrorException('Error al crear el usuario');
+  }
+}
+
 
   async login(loginDto: LoginDto): Promise<any> {
     try {
@@ -100,12 +103,7 @@ export class AuthService {
       const token = this.jwtService.sign(payload);
 
       return formatResponse([{
-        access_token: token,
-        user: {
-          user_id: user.user_id,
-          email: user.email,
-          is_active: user.is_active,
-        }
+        access_token: token
       }]);
     } catch (error) {
       console.error('Error en login:', error);
