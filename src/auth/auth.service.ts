@@ -32,23 +32,19 @@ export class AuthService {
   async isBlacklisted(token: string): Promise<boolean> {
   const cleanedToken = token.replace(/^Bearer\s+/i, '').trim();
 
-  if (!cleanedToken) return true; // Si está vacío, se considera inválido
+  if (!cleanedToken) return true;
 
-  try {
-    console.log('[verificación] Token recibido:', cleanedToken);
-    console.log('[verificación] Tokens en blacklist:', await this.blacklistedTokenRepo.find());
+  console.log('[isBlacklisted] Buscando token:', cleanedToken);
 
+  const entry = await this.blacklistedTokenRepo.findOne({
+    where: { token: cleanedToken },
+  });
 
-    const entry = await this.blacklistedTokenRepo.findOne({
-      where: { token: cleanedToken },
-    });
+  console.log('[isBlacklisted] Entrada encontrada:', entry);
 
-    return !!entry;
-  } catch (error) {
-    console.error('Error verificando token en blacklist:', error);
-    return true;
-  }
+  return !!entry;
 }
+
 
 
   async register(registerDto: RegisterDto): Promise<any> {
@@ -121,41 +117,33 @@ export class AuthService {
 }
 
 async logout(token: string): Promise<any> {
-  try {
-    const normalizedToken = this.normalizeToken(token);
-    console.log('[logout] Token normalizado:', normalizedToken);
+  const normalizedToken = token.replace(/^Bearer\s+/i, '').trim();
 
-    const decoded: any = this.jwtService.decode(normalizedToken);
-    // resto igual pero usando normalizedToken para guardar
-    if (!decoded || !decoded.sub) {
-      throw new UnauthorizedException('Token inválido');
-    }
+  console.log('[logout] Token normalizado:', normalizedToken);
 
-    const user = await this.usersService.findOne(decoded.sub);
-    if (!user) {
-      throw new UnauthorizedException('Usuario no encontrado');
-    }
-
-    const expiresAt = new Date(decoded.exp * 1000);
-
-    await this.blacklistedTokenRepo.save({
-  token: normalizedToken,
-  expiresAt,
-  user,
-});
-
-const saved = await this.blacklistedTokenRepo.findOne({ where: { token: normalizedToken } });
-console.log('[logout] Token guardado y verificado:', saved);
-
-
-    console.log('[logout] Token guardado en blacklist');
-
-    return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
-  } catch (error) {
-    console.error('Error al cerrar sesión:', error);
-    throw new UnauthorizedException('No se pudo cerrar sesión');
+  const decoded: any = this.jwtService.decode(normalizedToken);
+  if (!decoded || !decoded.sub) {
+    throw new UnauthorizedException('Token inválido');
   }
+
+  const user = await this.usersService.findOne(decoded.sub);
+  if (!user) {
+    throw new UnauthorizedException('Usuario no encontrado');
+  }
+
+  const expiresAt = new Date(decoded.exp * 1000);
+
+  await this.blacklistedTokenRepo.save({
+    token: normalizedToken,
+    expiresAt,
+    user,
+  });
+
+  console.log('[logout] Token guardado en blacklist');
+
+  return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
 }
+
 
   private async validateUser(email: string, password: string): Promise<User> {
     if (!email || !password) {
