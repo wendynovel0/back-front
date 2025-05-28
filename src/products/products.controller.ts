@@ -47,6 +47,11 @@ async findOneFromView(
   const product = await this.productsService.findOneFromView(id);
   return plainToInstance(ProductResponseDto, product); 
 }
+@Get()
+@ApiOperation({ 
+  summary: 'Buscar productos con filtros combinados',
+  description: 'Permite buscar productos por múltiples criterios. Todos los parámetros son opcionales.'
+})
 @ApiQuery({ 
   name: 'search', 
   required: false, 
