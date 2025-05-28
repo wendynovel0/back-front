@@ -30,7 +30,7 @@ export class AuthService {
 
 
   async isBlacklisted(token: string): Promise<boolean> {
-  const cleanedToken = token.trim();
+  const cleanedToken = token.replace(/^Bearer\s+/i, '').trim();
 
   if (!cleanedToken) return true; // Si está vacío, se considera inválido
 
@@ -139,10 +139,14 @@ async logout(token: string): Promise<any> {
     const expiresAt = new Date(decoded.exp * 1000);
 
     await this.blacklistedTokenRepo.save({
-      token: normalizedToken,
-      expiresAt,
-      user,
-    });
+  token: normalizedToken,
+  expiresAt,
+  user,
+});
+
+const saved = await this.blacklistedTokenRepo.findOne({ where: { token: normalizedToken } });
+console.log('[logout] Token guardado y verificado:', saved);
+
 
     console.log('[logout] Token guardado en blacklist');
 
