@@ -1,9 +1,8 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config'; // Asegúrate de importar ConfigService
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
-import * as process from 'node:process'; 
 
 @Module({
   imports: [
@@ -18,14 +17,27 @@ import * as process from 'node:process';
         SALT_ROUNDS: parseInt(config.SALT_ROUNDS) || 12
       })
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production',
-      ssl: { rejectUnauthorized: false }
+    // 👇 Reemplaza tu configuración TypeORM actual con esto:
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get('DATABASE_URL'),
+        autoLoadEntities: true,
+        synchronize: configService.get('NODE_ENV') !== 'production',
+        ssl: { rejectUnauthorized: false },
+        // Opcional: añade estas configuraciones adicionales
+        extra: {
+          connectionLimit: 10, // Para conexiones persistentes
+          ssl: configService.get('NODE_ENV') === 'production' 
+               ? { rejectUnauthorized: false } 
+               : false
+        }
+      }),
+      inject: [ConfigService],
     }),
-    forwardRef(() => AuthModule), 
-    forwardRef(() => UsersModule), ]
+    forwardRef(() => AuthModule),
+    forwardRef(() => UsersModule)
+  ]
 })
 export class AppModule {}
