@@ -11,7 +11,7 @@ import { ParseIntPipe } from '@nestjs/common';
 import { ApiOkResponse, ApiNotFoundResponse } from '@nestjs/swagger';
 import { ProductView } from './entities/product-view.entity';
 import { plainToInstance } from 'class-transformer';
-import { ProductResponseDto } from './dto/product-response.dto';
+import { ProductSwaggerDto } from './dto/product-swagger.dto';
 
 @ApiTags('Productos')
 @ApiBearerAuth()
@@ -22,12 +22,12 @@ export class ProductsController {
 
 @Get('view/:id')
 @ApiOperation({ summary: 'Buscar producto por ID' })
-@ApiResponse({
-  status: 200,
+@ApiOkResponse({ 
+  type: ProductSwaggerDto, 
   description: 'Producto encontrado',
   content: {
     'application/json': {
-      example: { 
+      example: {
         product_id: 12,
         code: 'XBOX-X',
         product_name: 'Xbox Series X',
@@ -41,12 +41,10 @@ export class ProductsController {
   }
 })
 @ApiNotFoundResponse({ description: 'Producto no encontrado' })
-async findOneFromView(
-  @Param('id', ParseIntPipe) id: number
-): Promise<ProductResponseDto> { 
-  const product = await this.productsService.findOneFromView(id);
-  return plainToInstance(ProductResponseDto, product); 
+async findOneFromView(@Param('id', ParseIntPipe) id: number): Promise<ProductView> {
+  return this.productsService.findOneFromView(id);
 }
+
 @Get()
 @ApiOperation({ 
   summary: 'Buscar productos con filtros combinados',
