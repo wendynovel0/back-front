@@ -35,6 +35,10 @@ export class AuthService {
   if (!cleanedToken) return true; // Si está vacío, se considera inválido
 
   try {
+    console.log('[verificación] Token recibido:', cleanedToken);
+    console.log('[verificación] Tokens en blacklist:', await this.blacklistedTokenRepo.find());
+
+
     const entry = await this.blacklistedTokenRepo.findOne({
       where: { token: cleanedToken },
     });
