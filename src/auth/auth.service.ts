@@ -88,8 +88,6 @@ export class AuthService {
           user_id: user.user_id,
           email: user.email,
           is_active: user.is_active,
-          created_at: user.created_at,
-          updated_at: user.updated_at,
         }
       }]);
     } catch (error) {
@@ -104,10 +102,33 @@ export class AuthService {
   }
 
   async logout(token: string): Promise<any> {
-    // Aquí asumo que tienes la lógica de blacklisting en otro lado o añadida
-    // Solo retorno la respuesta formateada según el estándar
+  try {
+    const decoded: any = this.jwtService.decode(token);
+
+    if (!decoded || !decoded.sub) {
+      throw new UnauthorizedException('Token inválido');
+    }
+
+    const user = await this.usersService.findByEmailWithPassword(decoded.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado');
+    }
+
+    const expiresAt = new Date(decoded.exp * 1000); // el exp viene en segundos
+
+    await this.blacklistedTokenRepo.save({
+      token,
+      expiresAt,
+      user,
+    });
+
     return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
+  } catch (error) {
+    console.error('Error al cerrar sesión:', error);
+    throw new InternalServerErrorException('No se pudo cerrar sesión');
   }
+}
 
   private async validateUser(email: string, password: string): Promise<User> {
     if (!email || !password) {

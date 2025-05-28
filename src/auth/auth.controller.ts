@@ -20,6 +20,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { formatResponse } from '../common/utils/response-format';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -40,7 +41,7 @@ export class AuthController {
     }
 
     await this.authService.logout(token);
-    return { message: 'Sesión cerrada' };
+    return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
   }
 
   @Post('register')
