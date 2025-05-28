@@ -1,43 +1,45 @@
-import { Module, forwardRef } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AuthModule } from './auth/auth.module';
+
 import { UsersModule } from './users/users.module';
+import { AuthModule } from './auth/auth.module';
+import { BrandsModule } from './brands/brands.module';
+import { ProductsModule } from './products/products.module';
+import { LogsModule } from './action-logs/action-logs.module';
+import { BrandSuppliersModule } from './brand-suppliers/brand-suppliers.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
-      validate: config => ({
-        JWT_SECRET: config.JWT_SECRET || (() => { throw new Error('JWT_SECRET es requerido') })(),
-        JWT_EXPIRES_IN: config.JWT_EXPIRES_IN || '1h',
-        DATABASE_URL: config.DATABASE_URL,
-        NODE_ENV: config.NODE_ENV || 'development',
-        SALT_ROUNDS: parseInt(config.SALT_ROUNDS) || 12
-      })
     }),
- 
+
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
-        url: configService.get('DATABASE_URL'),
+        url: configService.get<string>('DATABASE_URL'),
         autoLoadEntities: true,
-        synchronize: configService.get('NODE_ENV') !== 'production',
-        ssl: { rejectUnauthorized: false },
-       
+        synchronize: false, // Desactivado para evitar borrar datos
+        ssl: configService.get('NODE_ENV') === 'production'
+          ? { rejectUnauthorized: true }
+          : false,
         extra: {
-          connectionLimit: 10, 
-          ssl: configService.get('NODE_ENV') === 'production' 
-               ? { rejectUnauthorized: false } 
-               : false
-        }
+          options: "--client_encoding=UTF8"
+        },
+        logging: ['error', 'warn'],
       }),
       inject: [ConfigService],
     }),
-    forwardRef(() => AuthModule),
-    forwardRef(() => UsersModule)
-  ]
+
+    AuthModule,
+    UsersModule,
+    BrandsModule,
+    ProductsModule,
+    BrandSuppliersModule,
+    LogsModule,
+  ],
 })
 export class AppModule {}
