@@ -5,13 +5,13 @@ import { BrandSuppliersController } from './brand-suppliers.controller';
 import { BrandSupplier } from './entities/brand-supplier.entity';
 import { BrandSupplierView } from './entities/brand-suppliers-view.entity';
 import { BrandsModule } from '../brands/brands.module';
-import { LogsModule } from '../action-logs/action-logs.module';
+import { ActionLogsModule } from '../action-logs/action-logs.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([BrandSupplier, BrandSupplierView]),
     BrandsModule,
-    LogsModule,
+    ActionLogsModule,
   ],
   controllers: [BrandSuppliersController],
   providers: [BrandSuppliersService],
