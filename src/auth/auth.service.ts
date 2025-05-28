@@ -116,34 +116,34 @@ export class AuthService {
 
   async logout(token: string): Promise<any> {
   try {
-    if (!token || token.trim() === '') {
-      throw new UnauthorizedException('Token no proporcionado');
-    }
+    console.log('[logout] Token recibido:', token);
 
     const decoded: any = this.jwtService.decode(token);
+    console.log('[logout] Token decodificado:', decoded);
 
-    if (!decoded || !decoded.sub || !decoded.exp) {
-      throw new UnauthorizedException('Token inválido o expirado');
+    if (!decoded || !decoded.sub) {
+      console.log('[logout] Token inválido');
+      throw new UnauthorizedException('Token inválido');
     }
 
     const user = await this.usersService.findOne(decoded.sub);
+    console.log('[logout] Usuario:', user);
+
     if (!user) {
+      console.log('[logout] Usuario no encontrado');
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
-    const expiresAt = new Date(decoded.exp * 1000); // Expiración en ms
-
-    // Antes de guardar, verificamos si ya está en la blacklist (opcional)
-    const exists = await this.blacklistedTokenRepo.findOne({ where: { token } });
-    if (exists) {
-      return formatResponse([{ message: 'Token ya estaba en blacklist' }]);
-    }
+    const expiresAt = new Date(decoded.exp * 1000);
+    console.log('[logout] Expira en:', expiresAt);
 
     await this.blacklistedTokenRepo.save({
-      token: token.trim(),
+      token,
       expiresAt,
       user,
     });
+
+    console.log('[logout] Token guardado en blacklist');
 
     return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
   } catch (error) {
