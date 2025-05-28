@@ -114,7 +114,6 @@ async findAllWithFilters(
     createdEndDate,
     updatedStartDate,
     updatedEndDate,
-    isActive: isActiveBoolean,
   });
 }
 
