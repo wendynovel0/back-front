@@ -116,31 +116,30 @@ export class AuthService {
     }
   }
 
-  async logout(token: string): Promise<any> {
+  private normalizeToken(token: string): string {
+  return token.replace(/^Bearer\s+/i, '').trim();
+}
+
+async logout(token: string): Promise<any> {
   try {
-    console.log('[logout] Token recibido:', token);
+    const normalizedToken = this.normalizeToken(token);
+    console.log('[logout] Token normalizado:', normalizedToken);
 
-    const decoded: any = this.jwtService.decode(token);
-    console.log('[logout] Token decodificado:', decoded);
-
+    const decoded: any = this.jwtService.decode(normalizedToken);
+    // resto igual pero usando normalizedToken para guardar
     if (!decoded || !decoded.sub) {
-      console.log('[logout] Token inválido');
       throw new UnauthorizedException('Token inválido');
     }
 
     const user = await this.usersService.findOne(decoded.sub);
-    console.log('[logout] Usuario:', user);
-
     if (!user) {
-      console.log('[logout] Usuario no encontrado');
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
     const expiresAt = new Date(decoded.exp * 1000);
-    console.log('[logout] Expira en:', expiresAt);
 
     await this.blacklistedTokenRepo.save({
-      token,
+      token: normalizedToken,
       expiresAt,
       user,
     });
