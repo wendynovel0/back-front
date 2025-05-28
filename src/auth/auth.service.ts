@@ -109,14 +109,16 @@ export class AuthService {
       throw new UnauthorizedException('Token inválido');
     }
 
-    const user = await this.usersService.findByEmailWithPassword(decoded.sub);
+    // Aquí usamos el método findOne que busca por ID
+    const user = await this.usersService.findOne(decoded.sub);
 
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
-    const expiresAt = new Date(decoded.exp * 1000); // el exp viene en segundos
+    const expiresAt = new Date(decoded.exp * 1000); // El `exp` del token viene en segundos
 
+    // Guardamos el token en la lista negra
     await this.blacklistedTokenRepo.save({
       token,
       expiresAt,
@@ -126,7 +128,7 @@ export class AuthService {
     return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
   } catch (error) {
     console.error('Error al cerrar sesión:', error);
-    throw new InternalServerErrorException('No se pudo cerrar sesión');
+    throw new UnauthorizedException('No se pudo cerrar sesión');
   }
 }
 
