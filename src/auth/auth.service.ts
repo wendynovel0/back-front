@@ -6,11 +6,13 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { UserService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { User } from '../users/entities/user.entity';
+import { BlacklistedToken } from './entities/blacklisted-token.entity';
 
 // Helper para formato de respuesta estándar
 function formatResponse(records: any[]): any {
@@ -30,8 +32,15 @@ export class AuthService {
   constructor(
     private readonly usersService: UserService,
     private readonly jwtService: JwtService,
+    @InjectRepository(BlacklistedToken)
+    private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
   ) {}
 
+  async isBlacklisted(token: string): Promise<boolean> {
+    const entry = await this.blacklistedTokenRepo.findOne({ where: { token } });
+    return !!entry;
+  }
+  
   async register(registerDto: RegisterDto): Promise<any> {
     const { email, password } = registerDto;
 
