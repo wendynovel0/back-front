@@ -14,6 +14,6 @@ import { LogsView } from './entities/logs-view.entity';
   ],
   controllers: [ActionLogsController],
   providers: [ActionLogsService],
-  exports: [ActionLogsService], // Exportamos para usar en otros módulos
+  exports: [ActionLogsService, TypeOrmModule.forFeature([ActionLog])],
 })
-export class LogsModule {}
+export class ActionLogsModule {}
