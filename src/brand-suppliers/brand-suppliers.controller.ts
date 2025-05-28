@@ -108,7 +108,7 @@ async findAll(
 
 
   @Get(':id')
-@ApiOperation({ summary: 'Obtener proveedor por ID (vista simplificada)' })
+@ApiOperation({ summary: 'Obtener proveedor por ID' })
 @ApiParam({ 
   name: 'id', 
   example: 1, 
@@ -187,28 +187,8 @@ async findOne(@Param('id') id: string) {
       }
     }
   })
-  @Get(':id')
-@ApiOperation({ summary: 'Obtener proveedor por ID (vista simplificada)' })
-@ApiResponse({
-  status: 200,
-  description: 'Proveedor encontrado',
-  schema: {
-    example: {
-      id: 1,
-      name: "TechSource International",
-      contactPerson: "Roberto Mendoza",
-      email: "roberto@techsource.com",
-      phone: "8005550101",
-      address: "123 Tech Valley, Cupertino, CA, USA",
-      isActive: "Sí",
-      brand: {
-        name: "Apple",
-        description: "Empresa líder en tecnología conocida por el iPhone, Mac y iPad"
-      }
-    }
-  }
-})
 
+  
   @Post()
 @ApiOperation({ 
   summary: 'Crear un nuevo proveedor',
