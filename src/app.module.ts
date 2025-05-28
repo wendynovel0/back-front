@@ -1,45 +1,29 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { BrandsModule } from './brands/brands.module';
-import { ProductsModule } from './products/products.module';
-import { LogsModule } from './action-logs/action-logs.module';
-import { BrandSuppliersModule } from './brand-suppliers/brand-suppliers.module'
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      validate: config => ({
+        JWT_SECRET: config.JWT_SECRET || (() => { throw new Error('JWT_SECRET es requerido') })(),
+        JWT_EXPIRES_IN: config.JWT_EXPIRES_IN || '1h',
+        DATABASE_URL: config.DATABASE_URL,
+        NODE_ENV: config.NODE_ENV || 'development',
+        SALT_ROUNDS: parseInt(config.SALT_ROUNDS) || 12
+      })
     }),
-    
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        url: configService.get<string>('DATABASE_URL'),
-        autoLoadEntities: true,
-        synchronize: false, // Desactivado completamente
-        ssl: configService.get('NODE_ENV') === 'production' 
-          ? { rejectUnauthorized: true } 
-          : false,
-        // Opciones adicionales para evitar problemas con NULL
-        extra: {
-          options: "--client_encoding=UTF8"
-        },
-        logging: ['error', 'warn'], // Solo mostrar logs importantes
-      }),
-      inject: [ConfigService],
+    TypeOrmModule.forRoot({
+      type: 'postgres',
+      url: process.env.DATABASE_URL,
+      autoLoadEntities: true,
+      synchronize: process.env.NODE_ENV !== 'production',
+      ssl: { rejectUnauthorized: false }
     }),
-    
-    AuthModule,
-    BrandsModule,
-    ProductsModule,
-    UsersModule,
-    BrandSuppliersModule,
-    LogsModule,
-  ],
+    AuthModule
+  ]
 })
 export class AppModule {}
