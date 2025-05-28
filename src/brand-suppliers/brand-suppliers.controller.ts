@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Patch, Delete, ParseIntPipe, UseGuards, Request, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Patch, Delete, ParseIntPipe, UseGuards, Request, Query, BadRequestException, NotFoundException } from '@nestjs/common';
 import { BrandSuppliersService } from './brand-suppliers.service';
 import { CreateBrandSupplierDto } from './dto/create-brand-supplier.dto';
 import { UpdateBrandSupplierDto } from './dto/update-brand-supplier.dto';
@@ -108,38 +108,71 @@ async findAll(
 
 
   @Get(':id')
-  @ApiOperation({ summary: 'Obtener un proveedor por ID' })
-  @ApiParam({ 
-    name: 'id', 
-    example: 1, 
-    description: 'ID del proveedor',
-    type: Number
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Proveedor encontrado',
-    type: BrandSupplier,
-    examples: {
-      'Proveedor encontrado': {
-        summary: 'Ejemplo de proveedor existente',
-        value: {
-          supplierId: 1,
-          name: 'Proveedor de Materiales Premium S.A.',
-          contactPerson: 'Juan Pérez',
-          email: 'contacto@proveedormaterials.com',
-          phone: '9876543210',
-          address: 'Av. Industrial 123, Lima, Perú',
-          isActive: true,
-          createdAt: '2023-05-15',
-          updatedAt: '2023-05-20',
-          brand: {
-            brandId: 1,
-            name: 'Nike'
-          }
-        }
+@ApiOperation({ summary: 'Obtener proveedor por ID (vista simplificada)' })
+@ApiParam({ 
+  name: 'id', 
+  example: 1, 
+  description: 'ID del proveedor',
+  type: Number
+})
+@ApiResponse({
+  status: 200,
+  description: 'Proveedor encontrado',
+  schema: {
+    example: {
+      id: 1,
+      name: "TechSource International",
+      contactPerson: "Roberto Mendoza",
+      email: "roberto@techsource.com",
+      phone: "8005550101",
+      address: "123 Tech Valley, Cupertino, CA, USA",
+      isActive: "Sí",
+      brand: {
+        name: "Apple",
+        description: "Empresa líder en tecnología conocida por el iPhone, Mac y iPad"
       }
     }
-  })
+  }
+})
+@ApiResponse({ 
+  status: 404, 
+  description: 'Proveedor no encontrado',
+  examples: {
+    'Proveedor no existe': {
+      summary: 'Error cuando el proveedor no existe',
+      value: {
+        statusCode: 404,
+        message: 'Proveedor con ID 999 no encontrado',
+        error: 'Not Found'
+      }
+    }
+  }
+})
+async findOne(@Param('id') id: string) {
+  if (isNaN(+id)) {
+    throw new BadRequestException('ID inválido');
+  }
+
+  const supplier = await this.brandSuppliersService.findOne(+id);
+  
+  if (!supplier) {
+    throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
+  }
+
+  return {
+    id: supplier.id,
+    name: supplier.name,
+    contactPerson: supplier.contactPerson,
+    email: supplier.email,
+    phone: supplier.phone,
+    address: supplier.address,
+    isActive: supplier.isActive ? 'Sí' : 'No',
+    brand: {
+      name: supplier.brand.name,
+      description: supplier.brand.description
+    }
+  };
+}
   @ApiResponse({ 
     status: 404, 
     description: 'Proveedor no encontrado',
@@ -154,11 +187,27 @@ async findAll(
       }
     }
   })
-  async findOne(
-    @Param('id', ParseIntPipe) id: number
-  ): Promise<BrandSupplier> {
-    return this.brandSuppliersService.findOne(id);
+  @Get(':id')
+@ApiOperation({ summary: 'Obtener proveedor por ID (vista simplificada)' })
+@ApiResponse({
+  status: 200,
+  description: 'Proveedor encontrado',
+  schema: {
+    example: {
+      id: 1,
+      name: "TechSource International",
+      contactPerson: "Roberto Mendoza",
+      email: "roberto@techsource.com",
+      phone: "8005550101",
+      address: "123 Tech Valley, Cupertino, CA, USA",
+      isActive: "Sí",
+      brand: {
+        name: "Apple",
+        description: "Empresa líder en tecnología conocida por el iPhone, Mac y iPad"
+      }
+    }
   }
+})
 
   @Post()
 @ApiOperation({ 

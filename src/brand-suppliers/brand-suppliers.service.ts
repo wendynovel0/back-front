@@ -114,16 +114,15 @@ export class BrandSuppliersService {
 }
 
   
-  async findOne(id: number): Promise<BrandSupplier> {
+async findOne(id: number): Promise<BrandSupplier> {
   const supplier = await this.brandSupplierRepository.findOne({
-    where: { id }, // Changed from supplierId to id
-    relations: ['brand'],
+    where: { id },
+    relations: ['brand'], 
   });
-
+  
   if (!supplier) {
     throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
   }
-
   return supplier;
 }
 
