@@ -1,16 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('blacklisted_tokens')
 export class BlacklistedToken {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ unique: true })
+  @Column({ type: 'varchar', length: 500 })
   token: string;
 
-  @CreateDateColumn()
+  @Column({ type: 'timestamp' })
+  expiresAt: Date;
+
+  @CreateDateColumn({ type: 'date' })
   createdAt: Date;
 
-  @Column()
-  expiresAt: Date;
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
+  user: User;
 }
