@@ -30,9 +30,22 @@ export class AuthService {
 
 
   async isBlacklisted(token: string): Promise<boolean> {
-    const entry = await this.blacklistedTokenRepo.findOne({ where: { token } });
+  const cleanedToken = token.trim();
+
+  if (!cleanedToken) return true; // Si está vacío, se considera inválido
+
+  try {
+    const entry = await this.blacklistedTokenRepo.findOne({
+      where: { token: cleanedToken },
+    });
+
     return !!entry;
+  } catch (error) {
+    console.error('Error verificando token en blacklist:', error);
+    return true;
   }
+}
+
 
   async register(registerDto: RegisterDto): Promise<any> {
     const { email, password } = registerDto;
@@ -103,24 +116,31 @@ export class AuthService {
 
   async logout(token: string): Promise<any> {
   try {
-    const decoded: any = this.jwtService.decode(token);
-
-    if (!decoded || !decoded.sub) {
-      throw new UnauthorizedException('Token inválido');
+    if (!token || token.trim() === '') {
+      throw new UnauthorizedException('Token no proporcionado');
     }
 
-    // Aquí usamos el método findOne que busca por ID
-    const user = await this.usersService.findOne(decoded.sub);
+    const decoded: any = this.jwtService.decode(token);
 
+    if (!decoded || !decoded.sub || !decoded.exp) {
+      throw new UnauthorizedException('Token inválido o expirado');
+    }
+
+    const user = await this.usersService.findOne(decoded.sub);
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
     }
 
-    const expiresAt = new Date(decoded.exp * 1000); // El `exp` del token viene en segundos
+    const expiresAt = new Date(decoded.exp * 1000); // Expiración en ms
 
-    // Guardamos el token en la lista negra
+    // Antes de guardar, verificamos si ya está en la blacklist (opcional)
+    const exists = await this.blacklistedTokenRepo.findOne({ where: { token } });
+    if (exists) {
+      return formatResponse([{ message: 'Token ya estaba en blacklist' }]);
+    }
+
     await this.blacklistedTokenRepo.save({
-      token,
+      token: token.trim(),
       expiresAt,
       user,
     });
