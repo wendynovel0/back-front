@@ -18,6 +18,9 @@ export class ProductView {
   price: number;
 
   @ViewColumn()
+  product_is_active: boolean;
+
+  @ViewColumn()
   created_at: Date;
 
   @ViewColumn()
