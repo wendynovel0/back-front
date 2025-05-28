@@ -204,4 +204,11 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
 
   return formatResponse(filteredResponse);
 }
+// Método para obtener una vista mínima de la marca como nos dijo Russel
+async findOneMinimal(id: number) {
+  return this.brandRepository.findOne({
+    where: { id },
+    select: ['id', 'name', 'description', 'isActive'] 
+  });
+}
 }
