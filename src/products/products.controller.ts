@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -21,28 +21,52 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
 @Get('view/:id')
-@ApiOperation({ summary: 'Buscar producto por ID' })
-@ApiOkResponse({ 
-  type: ProductSwaggerDto, 
+@ApiOperation({ summary: 'Obtener producto por ID (vista simplificada)' })
+@ApiParam({
+  name: 'id',
+  type: Number,
+  description: 'ID del producto',
+  example: 12,
+})
+@ApiResponse({
+  status: 200,
   description: 'Producto encontrado',
-  content: {
-    'application/json': {
-      example: {
-        product_id: 12,
-        code: 'XBOX-X',
-        product_name: 'Xbox Series X',
-        description: 'Consola de juegos 4K con 1TB SSD y GPU de 12 TFLOPS',
-        price: 12999.00,
-        is_active: true,
-        brand_name: 'Microsoft',
-        supplier_name: 'Cloud Systems Inc'
-      }
+  schema: {
+    example: {
+      product_id: 12,
+      code: 'XBOX-X',
+      product_name: 'Xbox Series X',
+      description: 'Consola de juegos 4K con 1TB SSD y GPU de 12 TFLOPS',
+      price: 12999.00,
+      is_active: 'Sí',
+      brand_name: 'Microsoft',
+      supplier_name: 'Cloud Systems Inc'
     }
   }
 })
-@ApiNotFoundResponse({ description: 'Producto no encontrado' })
-async findOneFromView(@Param('id', ParseIntPipe) id: number): Promise<ProductView> {
-  return this.productsService.findOneFromView(id);
+@ApiResponse({ status: 400, description: 'ID inválido' })
+@ApiResponse({ status: 404, description: 'Producto no encontrado' })
+async findOneFromView(@Param('id') id: string) {
+  if (isNaN(+id)) {
+    throw new BadRequestException('ID inválido');
+  }
+
+  const product = await this.productsService.findOneMinimal(+id);
+  
+  if (!product) {
+    throw new NotFoundException('Producto no encontrado');
+  }
+
+  return {
+    product_id: product.product_id,
+    code: product.code,
+    product_name: product.product_name,
+    description: product.description,
+    price: product.price,
+    is_active: product.product_is_active ? 'Sí' : 'No', 
+    brand_name: product.brand_name,
+    supplier_name: product.supplier_name
+  };
 }
 
 @Get()

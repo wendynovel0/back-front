@@ -12,7 +12,7 @@ export class ProductSwaggerDto {
 
   @ApiProperty({ example: 'Consola de juegos 4K con 1TB SSD y GPU de 12 TFLOPS' })
   description: string;
-
+  
   @ApiProperty({ example: 12999.00 })
   price: number;
 
