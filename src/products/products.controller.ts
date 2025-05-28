@@ -21,7 +21,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
 @Get('view/:id')
-@ApiOperation({ summary: 'Obtener producto por ID (vista simplificada)' })
+@ApiOperation({ summary: 'Obtener producto por ID' })
 @ApiParam({
   name: 'id',
   type: Number,
