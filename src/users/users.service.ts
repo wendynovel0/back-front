@@ -178,7 +178,6 @@ export class UserService {
   createdEndDate?: string;
   updatedStartDate?: string;
   updatedEndDate?: string;
-  isActive?: boolean;
 }): Promise<UsersView[]> {
   const query = this.usersViewRepository.createQueryBuilder('user');
 
@@ -198,10 +197,6 @@ export class UserService {
       startUpdate: filters.updatedStartDate,
       endUpdate: filters.updatedEndDate,
     });
-  }
-
-  if (typeof filters.isActive === 'boolean') {
-    query.andWhere('user.is_active = :isActive', { isActive: filters.isActive });
   }
 
   return query.getMany();
