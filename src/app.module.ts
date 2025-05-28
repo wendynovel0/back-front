@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import * as process from 'node:process'; 
 
 @Module({
   imports: [
@@ -23,7 +25,7 @@ import { AuthModule } from './auth/auth.module';
       synchronize: process.env.NODE_ENV !== 'production',
       ssl: { rejectUnauthorized: false }
     }),
-    AuthModule
-  ]
+    forwardRef(() => AuthModule), 
+    forwardRef(() => UsersModule), ]
 })
 export class AppModule {}
