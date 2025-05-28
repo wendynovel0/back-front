@@ -10,6 +10,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ParseIntPipe } from '@nestjs/common';
 import { ApiOkResponse, ApiNotFoundResponse } from '@nestjs/swagger';
 import { ProductView } from './entities/product-view.entity';
+import { plainToInstance } from 'class-transformer';
+import { ProductResponseDto } from './dto/product-response.dto';
 
 @ApiTags('Productos')
 @ApiBearerAuth()
@@ -19,17 +21,32 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
 @Get('view/:id')
-  @ApiOperation({ summary: 'Buscar producto por ID' })
-  @ApiOkResponse({ type: ProductView })
-  @ApiNotFoundResponse({ description: 'Producto no encontrado' })
-  async findOneFromView(@Param('id', ParseIntPipe) id: number): Promise<ProductView> {
-    return this.productsService.findOneFromView(id);
+@ApiOperation({ summary: 'Buscar producto por ID' })
+@ApiResponse({
+  status: 200,
+  description: 'Producto encontrado',
+  content: {
+    'application/json': {
+      example: { 
+        product_id: 12,
+        code: 'XBOX-X',
+        product_name: 'Xbox Series X',
+        description: 'Consola de juegos 4K con 1TB SSD y GPU de 12 TFLOPS',
+        price: 12999.00,
+        is_active: true,
+        brand_name: 'Microsoft',
+        supplier_name: 'Cloud Systems Inc'
+      }
+    }
   }
-  @Get()
-@ApiOperation({ 
-  summary: 'Buscar productos con filtros combinados',
-  description: 'Permite buscar productos por múltiples criterios. Todos los parámetros son opcionales.'
 })
+@ApiNotFoundResponse({ description: 'Producto no encontrado' })
+async findOneFromView(
+  @Param('id', ParseIntPipe) id: number
+): Promise<ProductResponseDto> { 
+  const product = await this.productsService.findOneFromView(id);
+  return plainToInstance(ProductResponseDto, product); 
+}
 @ApiQuery({ 
   name: 'search', 
   required: false, 
@@ -38,7 +55,7 @@ export class ProductsController {
 })
 @ApiQuery({ 
   name: 'createdStartDate', 
-  required: false, 
+  required: false,  
   description: 'Fecha inicial de creación (formato YYYY-MM-DD)',
   example: '2023-01-01'
 })
