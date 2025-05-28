@@ -22,7 +22,12 @@ export class BooleanToStringInterceptor implements NestInterceptor {
       const transformed = {};
       for (const key in obj) {
         if (typeof obj[key] === 'boolean') {
-          transformed[key] = obj[key] ? 'Sí' : 'No';
+          // Excepción: no transformar el campo 'success'
+          if (key === 'success') {
+            transformed[key] = obj[key];
+          } else {
+            transformed[key] = obj[key] ? 'Sí' : 'No';
+          }
         } else if (typeof obj[key] === 'object') {
           transformed[key] = this.transformBooleans(obj[key]);
         } else {
