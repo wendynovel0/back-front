@@ -5,7 +5,9 @@ import { UserController } from './users.controller';
 import { User } from './entities/user.entity';
 import { UsersView } from './entities/users-view.entity'; 
 import { AuthModule } from '../auth/auth.module';
-import { LogsModule } from '../action-logs/action-logs.module';
+import { LogsModule } from '../action-logs/action-logs.module.js';
+
+
 
 @Module({
   imports: [
