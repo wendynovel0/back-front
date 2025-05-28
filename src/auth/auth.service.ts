@@ -14,17 +14,6 @@ import { LoginDto } from './dto/login.dto';
 import { User } from '../users/entities/user.entity';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
 
-// Helper para formato de respuesta estándar
-function formatResponse(records: any[]): any {
-  return {
-    success: true,
-    data: {
-      records,
-      total_count: records.length,
-    },
-  };
-}
-
 @Injectable()
 export class AuthService {
   private readonly SALT_ROUNDS = 12;
@@ -36,11 +25,12 @@ export class AuthService {
     private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
   ) {}
 
+
   async isBlacklisted(token: string): Promise<boolean> {
     const entry = await this.blacklistedTokenRepo.findOne({ where: { token } });
     return !!entry;
   }
-  
+
   async register(registerDto: RegisterDto): Promise<any> {
     const { email, password } = registerDto;
 
@@ -156,4 +146,14 @@ export class AuthService {
   private isValidBcryptHash(hash: string): boolean {
     return hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$');
   }
+}
+
+function formatResponse(records: any[]): any {
+  return {
+    success: true,
+    data: {
+      records,
+      total_count: records.length,
+    },
+  };
 }
