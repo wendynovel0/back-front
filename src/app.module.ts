@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, forwardRef } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -16,14 +17,27 @@ import { AuthModule } from './auth/auth.module';
         SALT_ROUNDS: parseInt(config.SALT_ROUNDS) || 12
       })
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      autoLoadEntities: true,
-      synchronize: process.env.NODE_ENV !== 'production',
-      ssl: { rejectUnauthorized: false }
+ 
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        url: configService.get('DATABASE_URL'),
+        autoLoadEntities: true,
+        synchronize: configService.get('NODE_ENV') !== 'production',
+        ssl: { rejectUnauthorized: false },
+       
+        extra: {
+          connectionLimit: 10, 
+          ssl: configService.get('NODE_ENV') === 'production' 
+               ? { rejectUnauthorized: false } 
+               : false
+        }
+      }),
+      inject: [ConfigService],
     }),
-    AuthModule
+    forwardRef(() => AuthModule),
+    forwardRef(() => UsersModule)
   ]
 })
 export class AppModule {}
