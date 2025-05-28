@@ -6,6 +6,7 @@ import { BrandView } from './entities/brands-view.entity';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { formatResponse } from '../common/utils/response-format';
 
 @Injectable()
 export class BrandService {
@@ -146,7 +147,7 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
   createdEndDate?: string;
   updatedStartDate?: string;
   updatedEndDate?: string;
-}): Promise<BrandView[]> {
+}) {
   const query = this.brandsViewRepository.createQueryBuilder('brand');
   const now = new Date();
 
@@ -157,49 +158,33 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
   }
 
   if (filters.isActive !== undefined) {
-    query.andWhere('brand.brand_is_active = :isActive', { isActive: filters.isActive });
+    query.andWhere('brand.brand_is_active = :isActive', {
+      isActive: filters.isActive,
+    });
   }
 
   if (filters.createdStartDate && !filters.createdEndDate) {
-    throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio para "created_at".');
+    throw new BadRequestException('Debe proporcionar ambas fechas de creación.');
   }
 
   if (filters.updatedStartDate && !filters.updatedEndDate) {
-    throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio para "updated_at".');
+    throw new BadRequestException('Debe proporcionar ambas fechas de actualización.');
   }
 
   if (filters.createdStartDate && filters.createdEndDate) {
     const start = new Date(filters.createdStartDate);
     const end = new Date(filters.createdEndDate);
-
-    if (start > end) {
-      throw new BadRequestException('La fecha de inicio de creación no puede ser mayor que la de fin.');
-    }
-    if (start > now || end > now) {
-      throw new BadRequestException('No se permiten fechas futuras para "created_at".');
-    }
-
-    query.andWhere('brand.created_at BETWEEN :start AND :end', {
-      start,
-      end,
-    });
+    if (start > end) throw new BadRequestException('Fecha de inicio de creación mayor a la de fin.');
+    if (start > now || end > now) throw new BadRequestException('Fechas futuras no permitidas en creación.');
+    query.andWhere('brand.created_at BETWEEN :start AND :end', { start, end });
   }
 
   if (filters.updatedStartDate && filters.updatedEndDate) {
-    const startUpdate = new Date(filters.updatedStartDate);
-    const endUpdate = new Date(filters.updatedEndDate);
-
-    if (startUpdate > endUpdate) {
-      throw new BadRequestException('La fecha de inicio de actualización no puede ser mayor que la de fin.');
-    }
-    if (startUpdate > now || endUpdate > now) {
-      throw new BadRequestException('No se permiten fechas futuras para "updated_at".');
-    }
-
-    query.andWhere('brand.updated_at BETWEEN :startUpdate AND :endUpdate', {
-      startUpdate,
-      endUpdate,
-    });
+    const start = new Date(filters.updatedStartDate);
+    const end = new Date(filters.updatedEndDate);
+    if (start > end) throw new BadRequestException('Fecha de inicio de actualización mayor a la de fin.');
+    if (start > now || end > now) throw new BadRequestException('Fechas futuras no permitidas en actualización.');
+    query.andWhere('brand.updated_at BETWEEN :start AND :end', { start, end });
   }
 
   if (filters.supplierId) {
@@ -208,14 +193,15 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
 
   const brands = await query.orderBy('brand.created_at', 'DESC').getMany();
 
-  return brands.map(brand => ({
+  const filteredResponse = brands.map((brand) => ({
     brand_id: brand.brand_id,
     brand_name: brand.brand_name,
     description: brand.description,
-    created_at: brand.created_at,
-    updated_at: brand.updated_at,
     supplier_id: brand.supplier_id,
     supplier_name: brand.supplier_name,
+    // No se devuelven created_at ni updated_at
   }));
+
+  return formatResponse(filteredResponse);
 }
 }
