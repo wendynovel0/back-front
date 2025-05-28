@@ -11,31 +11,37 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private readonly authService: AuthService) {
     super();
   }
-   async canActivate(context: ExecutionContext): Promise<boolean> {
-  const can = (await super.canActivate(context)) as boolean;
-  if (!can) return false;
 
-  const req = context.switchToHttp().getRequest();
-  const authHeader = req.headers.authorization || '';
-  const token = authHeader.replace('Bearer ', '').trim();
+  async canActivate(context: ExecutionContext): Promise<boolean> {
+    const req = context.switchToHttp().getRequest();
+    const authHeader = req.headers.authorization || '';
+    // Normaliza el token quitando "Bearer " (sin importar mayúsculas/minúsculas)
+    const token = authHeader.replace(/^Bearer\s+/i, '').trim();
 
-  if (!token) {
-    throw new UnauthorizedException('Token no proporcionado');
+    console.log('[guard] Token recibido para validar:', token);
+
+    if (!token) {
+      throw new UnauthorizedException('Token no proporcionado');
+    }
+
+    const can = (await super.canActivate(context)) as boolean;
+    console.log('[guard] Resultado super.canActivate:', can);
+    if (!can) return false;
+
+    const isBlacklisted = await this.authService.isBlacklisted(token);
+    console.log('[guard] ¿Token en blacklist?', isBlacklisted);
+
+    if (isBlacklisted) {
+      throw new UnauthorizedException('Token en lista negra o sesión cerrada');
+    }
+
+    return true;
   }
 
-  const isBlacklisted = await this.authService.isBlacklisted(token);
-  if (isBlacklisted) {
-    throw new UnauthorizedException('Token en lista negra o sesión cerrada');
+  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
+    if (err || !user) {
+      throw err || new UnauthorizedException('Token inválido');
+    }
+    return user;
   }
-
-  return true;
-}
-
-handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
-  if (err || !user) {
-    throw err || new UnauthorizedException('Token inválido');
-  }
-  return user;
-}
-
 }
