@@ -3,6 +3,8 @@ import {
   UnauthorizedException,
   ConflictException,
   InternalServerErrorException,
+  Inject,
+  forwardRef
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -19,6 +21,7 @@ export class AuthService {
   private readonly SALT_ROUNDS = 12;
 
   constructor(
+    @Inject(forwardRef(() => UserService))
     private readonly usersService: UserService,
     private readonly jwtService: JwtService,
     @InjectRepository(BlacklistedToken)
