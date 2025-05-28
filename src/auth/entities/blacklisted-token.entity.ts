@@ -9,10 +9,10 @@ export class BlacklistedToken {
   @Column({ type: 'varchar', length: 500 })
   token: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ name: 'expires_at', type: 'timestamp' })
   expiresAt: Date;
 
-  @CreateDateColumn({ type: 'date' })
+  @CreateDateColumn({ name: 'created_at', type: 'date' })
   createdAt: Date;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
