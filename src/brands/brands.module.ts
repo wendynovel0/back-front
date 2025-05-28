@@ -5,14 +5,14 @@ import { BrandsController } from './brands.controller';
 import { Brand } from './entities/brand.entity';
 import { BrandView } from './entities/brands-view.entity';
 import { AuthModule } from '../auth/auth.module';
-import { ActionLogsModule } from '../action-logs/action-logs.module';
+import { LogsModule } from '../action-logs/action-logs.module';
 import { User } from '../users/entities/user.entity';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Brand, User, BrandView]),
     AuthModule,
-    ActionLogsModule,
+    LogsModule,
   ],
   controllers: [BrandsController],
   providers: [BrandService],
