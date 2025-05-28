@@ -280,4 +280,19 @@ export class ProductsService {
 
     return product;
   }
+  async findOneMinimal(id: number) {
+  return this.productViewRepository.findOne({
+    where: { product_id: id },
+    select: [
+      'product_id',
+      'code',
+      'product_name',
+      'description',
+      'price',
+      'product_is_active',
+      'brand_name',
+      'supplier_name'
+    ]
+  });
+}
 }
