@@ -2,24 +2,32 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
 import { User } from './entities/user.entity';
-import { ActionLogsService } from '../action-logs/action-logs.service';
 import { UsersView } from './entities/users-view.entity';
+import { ActionLogsService } from '../action-logs/action-logs.service';
+import { AuthService } from '../auth/auth.service'; // 👈 importa el AuthService
+
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
-    private actionLogsService: ActionLogsService,
-    @InjectRepository(UsersView) 
+    @InjectRepository(UsersView)
     private usersViewRepository: Repository<UsersView>,
+    private actionLogsService: ActionLogsService,
+
+    @Inject(forwardRef(() => AuthService)) 
+    private authService: AuthService,
   ) {}
 
   async create(createUserDto: CreateUserDto): Promise<User> {

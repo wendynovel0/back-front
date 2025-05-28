@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
 import { ConfigService } from '@nestjs/config';
 
+import { forwardRef, Inject } from '@nestjs/common';
 import { UserService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -21,6 +22,7 @@ export class AuthService {
   private readonly SALT_ROUNDS = 12;
 
   constructor(
+  @Inject(forwardRef(() => UserService))
   private readonly usersService: UserService,
   private readonly jwtService: JwtService,
   private readonly configService: ConfigService,
