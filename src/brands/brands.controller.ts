@@ -15,6 +15,7 @@ import {
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandService } from './brand.service'; // Nombre corregido
 import { UpdateBrandDto } from './dto/update-brand.dto';
+import { BadRequestException } from '@nestjs/common/exceptions/bad-request.exception';
 import {
   ApiTags,
   ApiBearerAuth,
@@ -126,34 +127,36 @@ async findAll(
 @ApiResponse({
   status: 200,
   description: 'Marca de TI encontrada',
-  type: Brand,
-  examples: {
-    'Marca encontrada': {
-      summary: 'Ejemplo de marca existente',
-      value: {
-        id: 1,
-        name: 'Microsoft',
-        description: 'Empresa líder en software y servicios en la nube',
-        isActive: true,
-        createdAt: '2023-01-15',
-        updatedAt: '2023-06-20',
-      },
-    },
-  },
+  schema: {
+    example: {
+      id: 1,
+      name: 'Microsoft',
+      description: 'Empresa líder en software y servicios en la nube',
+      isActive: 'Sí'
+    }
+  }
 })
+@ApiResponse({ status: 400, description: 'ID inválido' })
 @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
 @ApiResponse({ status: 404, description: 'Marca no encontrada' })
-async findOne(@Param('id') id: string, @CurrentUser() user: User) {
-  if (!user) {
-    throw new UnauthorizedException('Token inválido o usuario no autenticado');
+async findOne(@Param('id') id: string) {
+
+  if (isNaN(+id)) {
+    throw new BadRequestException('ID inválido');
   }
 
-  const brand = await this.brandsService.findOne(+id);
+  const brand = await this.brandsService.findOneMinimal(+id);
+  
   if (!brand) {
     throw new NotFoundException('Marca no encontrada');
   }
 
-  return brand;
+  return {
+    id: brand.id,
+    name: brand.name,
+    description: brand.description,
+    isActive: brand.isActive ? 'Sí' : 'No'
+  };
 }
 
 
