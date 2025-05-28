@@ -1,4 +1,3 @@
-// src/products/dto/product-search.dto.ts
 import { IsOptional, IsBoolean, IsArray, IsNumber, IsString } from 'class-validator';
 
 export class ProductSearchDto {
