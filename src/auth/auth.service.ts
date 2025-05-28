@@ -82,11 +82,11 @@ async login(loginDto: LoginDto) {
   if (!user) {
     throw new UnauthorizedException('Credenciales inválidas');
   }
+
   const payload: JwtPayload = {
     sub: user.user_id,
     email: user.email,
-    is_active: user.is_active,
-    ...(user.username && { username: user.username }) 
+    is_active: user.is_active
   };
 
   const token = this.jwtService.sign(payload);
