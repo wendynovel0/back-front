@@ -1,5 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config'; // Asegúrate de importar ConfigService
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
@@ -17,7 +17,7 @@ import { UsersModule } from './users/users.module';
         SALT_ROUNDS: parseInt(config.SALT_ROUNDS) || 12
       })
     }),
-    // 👇 Reemplaza tu configuración TypeORM actual con esto:
+ 
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
@@ -26,9 +26,9 @@ import { UsersModule } from './users/users.module';
         autoLoadEntities: true,
         synchronize: configService.get('NODE_ENV') !== 'production',
         ssl: { rejectUnauthorized: false },
-        // Opcional: añade estas configuraciones adicionales
+       
         extra: {
-          connectionLimit: 10, // Para conexiones persistentes
+          connectionLimit: 10, 
           ssl: configService.get('NODE_ENV') === 'production' 
                ? { rejectUnauthorized: false } 
                : false
