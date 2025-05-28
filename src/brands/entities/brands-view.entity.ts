@@ -12,6 +12,9 @@ export class BrandView {
   description: string;
 
   @ViewColumn()
+  brand_is_active: boolean;
+
+  @ViewColumn()
   created_at: Date;
 
   @ViewColumn()

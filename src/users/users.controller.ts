@@ -32,6 +32,7 @@ import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from './entities/user.entity';
 import { UsersView } from './entities/users-view.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { formatResponse } from '../common/utils/response-format';
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -108,23 +109,39 @@ async findAllWithFilters(
     ? false
     : undefined;
 
-  return this.userService.findAllWithFilters({
+  // Llamas al servicio para obtener los registros
+  const records = await this.userService.findAllWithFilters({
     email,
     createdStartDate,
     createdEndDate,
     updatedStartDate,
     updatedEndDate,
+    is_active: isActiveBoolean,
   });
+
+  // Mapeas para devolver solo los campos necesarios
+  const filteredRecords = records.map(user => ({
+    user_id: user.user_id,
+    email: user.email,
+    is_active: user.is_active,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+  }));
+
+  // Retornas la respuesta formateada
+  return formatResponse(filteredRecords);
 }
 
-
   @Get(':id')
-  @ApiOkResponse({ type: User, description: 'Usuario obtenido correctamente' })
-  @ApiUnauthorizedResponse({ description: 'No autorizado: token faltante o inválido' })
-  @ApiForbiddenResponse({ description: 'Acceso denegado' })
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
-  }
+@ApiOkResponse({ description: 'Usuario obtenido correctamente' })
+@ApiUnauthorizedResponse({ description: 'No autorizado: token faltante o inválido' })
+@ApiForbiddenResponse({ description: 'Acceso denegado' })
+async findOne(@Param('id') id: string) {
+  const user = await this.userService.findOne(+id);
+
+  return formatResponse(user ? [user] : []);
+}
+
 
   @Put(':id')
   @ApiOkResponse({ description: 'Usuario reemplazado completamente (PUT)' })

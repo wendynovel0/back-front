@@ -68,11 +68,22 @@ export class UserService {
     });
   }
 
-  async findOne(id: number): Promise<User> {
-    const user = await this.userRepository.findOne({ where: { user_id: id } });
-    if (!user) throw new NotFoundException('User not found');
-    return user;
+  async findOne(id: number): Promise<Partial<UsersView>> {
+  const user = await this.usersViewRepository.findOne({ where: { user_id: id } });
+
+  if (!user) {
+    throw new NotFoundException('User not found');
   }
+
+  return {
+    user_id: user.user_id,
+    email: user.email,
+    is_active: user.is_active,
+    created_at: user.created_at,
+    updated_at: user.updated_at,
+  };
+}
+
 
   async replace(
     id: number,
@@ -141,19 +152,25 @@ export class UserService {
   }
 
   async remove(id: number, performedBy: number, ip?: string): Promise<void> {
-    const user = await this.findOne(id);
+  const userForLog = await this.findOne(id);
 
-    await this.actionLogsService.logAction({
-      userId: performedBy,
-      actionType: 'DELETE',
-      entityType: 'user',
-      entityId: user.user_id,
-      oldValue: user,
-      ipAddress: ip,
-    });
-
-    await this.userRepository.remove(user);
+  const userEntity = await this.userRepository.findOne({ where: { user_id: id } });
+  if (!userEntity) {
+    throw new NotFoundException('User not found');
   }
+
+  await this.actionLogsService.logAction({
+    userId: performedBy,
+    actionType: 'DELETE',
+    entityType: 'user',
+    entityId: userEntity.user_id,
+    oldValue: userForLog, 
+    ipAddress: ip,
+  });
+
+  await this.userRepository.remove(userEntity);
+}
+
 
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
@@ -178,6 +195,7 @@ export class UserService {
   createdEndDate?: string;
   updatedStartDate?: string;
   updatedEndDate?: string;
+  is_active?: boolean;
 }): Promise<UsersView[]> {
   const query = this.usersViewRepository.createQueryBuilder('user');
 
@@ -190,16 +208,19 @@ export class UserService {
       start: filters.createdStartDate,
       end: filters.createdEndDate,
     });
+  } else if (filters.createdStartDate || filters.createdEndDate) {
+    throw new Error('Debe especificar ambas fechas para filtro por fecha de creación.');
   }
 
   if (filters.updatedStartDate && filters.updatedEndDate) {
-    query.andWhere('user.updated_at BETWEEN :startUpdate AND :endUpdate', {
-      startUpdate: filters.updatedStartDate,
-      endUpdate: filters.updatedEndDate,
+    query.andWhere('user.updated_at BETWEEN :startUpdated AND :endUpdated', {
+      startUpdated: filters.updatedStartDate,
+      endUpdated: filters.updatedEndDate,
     });
+  } else if (filters.updatedStartDate || filters.updatedEndDate) {
+    throw new Error('Debe especificar ambas fechas para filtro por fecha de actualización.');
   }
 
-  return query.getMany();
+  return await query.getMany();
 }
-
 }
