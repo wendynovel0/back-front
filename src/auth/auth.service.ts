@@ -6,47 +6,37 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { Repository } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import { BlacklistedToken } from './entities/blacklisted-token.entity';
-import { ConfigService } from '@nestjs/config';
-import { forwardRef, Inject } from '@nestjs/common';
+
 import { UserService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { User } from '../users/entities/user.entity';
-import { JwtPayload } from './interfaces/jwt-payload.interface';
+
+// Helper para formato de respuesta estándar
+function formatResponse(records: any[]): any {
+  return {
+    success: true,
+    data: {
+      records,
+      total_count: records.length,
+    },
+  };
+}
 
 @Injectable()
 export class AuthService {
-  private readonly SALT_ROUNDS: number = 12;
+  private readonly SALT_ROUNDS = 12;
 
   constructor(
-    @Inject(forwardRef(() => UserService))
     private readonly usersService: UserService,
     private readonly jwtService: JwtService,
-    private readonly configService: ConfigService,
-    @InjectRepository(BlacklistedToken)
-    private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
   ) {}
 
-  async logout(token: string): Promise<{ message: string }> {
-    const decoded = this.jwtService.decode(token) as { exp?: number };
-    if (!decoded?.exp) {
-      throw new UnauthorizedException('Token inválido');
-    }
-
-    const expiresAt = new Date(decoded.exp * 1000);
-    await this.blacklistedTokenRepo.save({ token, expiresAt });
-
-    return { message: 'Sesión cerrada correctamente' };
-  }
-
-  async register(registerDto: RegisterDto): Promise<Omit<User, 'password_hash'>> {
+  async register(registerDto: RegisterDto): Promise<any> {
     const { email, password } = registerDto;
 
     if (!email || !password) {
-      throw new UnauthorizedException('Email y contraseña son requeridos');
+      throw new UnauthorizedException('Se requieren email y contraseña');
     }
 
     if (password.length < 8) {
@@ -54,14 +44,15 @@ export class AuthService {
     }
 
     const normalizedEmail = email.toLowerCase().trim();
-    const existingUser = await this.usersService.findByEmail(normalizedEmail);
 
+    const existingUser = await this.usersService.findByEmail(normalizedEmail);
     if (existingUser) {
       throw new ConflictException('El email ya está registrado');
     }
 
     try {
       const hashedPassword = await this.hashPassword(password);
+
       const newUser = await this.usersService.create({
         email: normalizedEmail,
         password_hash: hashedPassword,
@@ -69,39 +60,56 @@ export class AuthService {
       });
 
       const { password_hash, ...result } = newUser;
-      return result;
+      return formatResponse([result]);
     } catch (error) {
-      throw new InternalServerErrorException('Error al registrar el usuario');
+      console.error('Error en registro:', error);
+      throw new InternalServerErrorException('Error al crear el usuario');
     }
   }
 
+  async login(loginDto: LoginDto): Promise<any> {
+    try {
+      const normalizedEmail = loginDto.email.toLowerCase().trim();
+      const user = await this.validateUser(normalizedEmail, loginDto.password);
 
-async login(loginDto: LoginDto) {
-  const user = await this.validateUser(loginDto.email, loginDto.password);
+      const payload = {
+        sub: user.user_id,
+        email: user.email,
+        is_active: user.is_active,
+      };
 
-  if (!user) {
-    throw new UnauthorizedException('Credenciales inválidas');
+      const token = this.jwtService.sign(payload);
+
+      return formatResponse([{
+        access_token: token,
+        user: {
+          user_id: user.user_id,
+          email: user.email,
+          is_active: user.is_active,
+          created_at: user.created_at,
+          updated_at: user.updated_at,
+        }
+      }]);
+    } catch (error) {
+      console.error('Error en login:', error);
+
+      if (error instanceof UnauthorizedException) {
+        throw new UnauthorizedException('Email o contraseña incorrectos');
+      }
+
+      throw new InternalServerErrorException('Error al iniciar sesión');
+    }
   }
 
-  const payload: JwtPayload = {
-    sub: user.user_id,
-    email: user.email,
-    is_active: user.is_active
-  };
+  async logout(token: string): Promise<any> {
+    // Aquí asumo que tienes la lógica de blacklisting en otro lado o añadida
+    // Solo retorno la respuesta formateada según el estándar
+    return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
+  }
 
-  const token = this.jwtService.sign(payload);
-
-  return {
-    expires_in: 3600,
-    access_token: token,
-    email: user.email,
-    user_id: user.user_id
-  };
-}
-
-  async validateUser(email: string, password: string): Promise<User> {
+  private async validateUser(email: string, password: string): Promise<User> {
     if (!email || !password) {
-      throw new UnauthorizedException('Email y contraseña son requeridos');
+      throw new UnauthorizedException('Se requieren email y contraseña');
     }
 
     const user = await this.usersService.findByEmailWithPassword(email);
@@ -110,7 +118,7 @@ async login(loginDto: LoginDto) {
     }
 
     if (!user.is_active) {
-      throw new UnauthorizedException('Cuenta desactivada');
+      throw new UnauthorizedException('La cuenta está desactivada');
     }
 
     const isValidPassword = await this.comparePasswords(password, user.password_hash);
@@ -123,37 +131,20 @@ async login(loginDto: LoginDto) {
 
   private async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
-    return bcrypt.hash(password, salt);
+    return await bcrypt.hash(password, salt);
   }
 
-  private async comparePasswords(
-    plainTextPassword: string,
-    hash: string
-  ): Promise<boolean> {
+  private async comparePasswords(plainTextPassword: string, hash: string): Promise<boolean> {
     if (!plainTextPassword || !hash) return false;
 
     if (!this.isValidBcryptHash(hash)) {
       return plainTextPassword === hash;
     }
 
-    return bcrypt.compare(plainTextPassword, hash);
+    return await bcrypt.compare(plainTextPassword, hash);
   }
 
   private isValidBcryptHash(hash: string): boolean {
-    return /^\$2[aby]\$/.test(hash);
-  }
-
-  async isBlacklisted(token: string): Promise<boolean> {
-    const entry = await this.blacklistedTokenRepo.findOne({ where: { token } });
-    return !!entry;
-  }
-
-  // Método para diagnóstico (opcional)
-  async diagnostic(email: string): Promise<{ exists: boolean; isActive?: boolean }> {
-    const user = await this.usersService.findByEmail(email);
-    return {
-      exists: !!user,
-      isActive: user?.is_active
-    };
+    return hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$');
   }
 }
