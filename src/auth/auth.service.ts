@@ -9,7 +9,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { UserService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -36,16 +36,23 @@ export class AuthService {
 
   console.log('[isBlacklisted] Buscando token:', cleanedToken);
 
-  const entry = await this.blacklistedTokenRepo.findOne({
+  let entry = await this.blacklistedTokenRepo.findOne({
     where: { token: cleanedToken },
   });
 
-  console.log('[isBlacklisted] Entrada encontrada:', entry);
+  if (!entry) {
+    // Intento de búsqueda "fuzzy" para debug
+    const partialToken = cleanedToken.substring(0, 20);
+    const similarEntry = await this.blacklistedTokenRepo.findOne({
+      where: { token: Like(`%${partialToken}%`) },
+    });
+    console.log('[isBlacklisted] Entrada similar encontrada con LIKE:', similarEntry);
+  } else {
+    console.log('[isBlacklisted] Entrada encontrada:', entry);
+  }
 
   return !!entry;
 }
-
-
 
   async register(registerDto: RegisterDto): Promise<any> {
   const { email, password } = registerDto;
