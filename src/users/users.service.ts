@@ -245,6 +245,8 @@ async findByActivationToken(token: string): Promise<User | null> {
     throw new Error('Debe especificar ambas fechas para filtro por fecha de actualización.');
   }
 
-  return await query.getMany();
+  return query
+  .orderBy('user.created_at', 'DESC')
+  .getMany();
 }
 }
