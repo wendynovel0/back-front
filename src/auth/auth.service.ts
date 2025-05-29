@@ -134,6 +134,7 @@ async logout(token: string): Promise<any> {
   console.log('[logout] Token saved:', `"${token}"`);
 
   console.log('[logout] Token guardado en blacklist');
+  console.log('[logout] SHA:', require('crypto').createHash('sha256').update(normalizedToken).digest('hex'));
 
   return { message: 'Sesión cerrada correctamente' };
 }
@@ -155,6 +156,8 @@ async logout(token: string): Promise<any> {
   } else {
     console.log('[isBlacklisted] Token no está en blacklist.');
   }
+
+  console.log('[logout] SHA:', require('crypto').createHash('sha256').update(cleanedToken).digest('hex'));
 
   return !!entry;
 }
