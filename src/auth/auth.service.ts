@@ -17,6 +17,8 @@ import { LoginDto } from './dto/login.dto';
 import { User } from '../users/entities/user.entity';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
 import { MailService } from '../mail/mail.service';
+import { normalizeToken } from '../common/utils/token.utils';
+
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 
 @Injectable()
@@ -34,7 +36,7 @@ export class AuthService {
 
 
   async isBlacklisted(token: string): Promise<boolean> {
-  const cleanedToken = token.replace(/^Bearer\s+/i, '').trim();
+  const cleanedToken = normalizeToken(token);
 
   if (!cleanedToken) {
     console.warn('[isBlacklisted] Token vacío después de limpiar. Se considera inválido.');
@@ -128,7 +130,7 @@ export class AuthService {
 }
 
 async logout(token: string): Promise<any> {
-  const normalizedToken = token.replace(/^Bearer\s+/i, '').trim();
+  const normalizedToken = normalizeToken(token);
 
   console.log('[logout] Token normalizado:', normalizedToken);
 
