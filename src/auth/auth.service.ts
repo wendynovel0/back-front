@@ -148,18 +148,34 @@ async logout(token: string): Promise<any> {
   }
 
   console.log('[isBlacklisted] Buscando token exacto:', cleanedToken);
+  console.log('[blacklist] SHA:', require('crypto').createHash('sha256').update(cleanedToken).digest('hex'));
 
-  const entry = await this.blacklistedTokenRepo.findOneBy({ token: cleanedToken });
+  // Primer intento: usando findOne con where
+  const entry = await this.blacklistedTokenRepo.findOne({
+    where: { token: cleanedToken },
+  });
 
   if (entry) {
     console.log('[isBlacklisted] Entrada encontrada en blacklist:', entry);
+    return true;
   } else {
-    console.log('[isBlacklisted] Token no está en blacklist.');
+    console.log('[isBlacklisted] No encontrado con findOne. Ejecutando query raw para verificar...');
+
+    // Segundo intento: usar query builder para depurar
+    const result = await this.blacklistedTokenRepo
+      .createQueryBuilder('bt')
+      .where('bt.token = :token', { token: cleanedToken })
+      .getRawAndEntities();
+
+    if (result.raw.length > 0) {
+      console.warn('[isBlacklisted] ⚠️ Token sí está en la base, pero no lo encuentra con findOne.');
+      console.log('[isBlacklisted] Raw data:', result.raw);
+      return true;
+    }
+
+    console.log('[isBlacklisted] Token NO está en blacklist.');
+    return false;
   }
-
-  console.log('[blacklist] SHA:', require('crypto').createHash('sha256').update(cleanedToken).digest('hex'));
-
-  return !!entry;
 }
 
 async confirmAccount(activationToken: string): Promise<any> {
