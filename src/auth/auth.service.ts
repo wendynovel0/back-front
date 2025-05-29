@@ -35,27 +35,6 @@ export class AuthService {
   ) {}
 
 
-  async isBlacklisted(token: string): Promise<boolean> {
-  const cleanedToken = normalizeToken(token);
-
-  if (!cleanedToken) {
-    console.warn('[isBlacklisted] Token vacío después de limpiar. Se considera inválido.');
-    return true;
-  }
-
-  console.log('[isBlacklisted] Buscando token exacto:', cleanedToken);
-
-  const entry = await this.blacklistedTokenRepo.findOneBy({ token: cleanedToken });
-
-  if (entry) {
-    console.log('[isBlacklisted] Entrada encontrada en blacklist:', entry);
-  } else {
-    console.log('[isBlacklisted] Token no está en blacklist.');
-  }
-
-  return !!entry;
-}
-
   async register(registerDto: RegisterDto): Promise<any> {
   const { email, password } = registerDto;
 
@@ -157,6 +136,27 @@ async logout(token: string): Promise<any> {
   console.log('[logout] Token guardado en blacklist');
 
   return { message: 'Sesión cerrada correctamente' };
+}
+
+  async isBlacklisted(token: string): Promise<boolean> {
+  const cleanedToken = normalizeToken(token);
+
+  if (!cleanedToken) {
+    console.warn('[isBlacklisted] Token vacío después de limpiar. Se considera inválido.');
+    return true;
+  }
+
+  console.log('[isBlacklisted] Buscando token exacto:', cleanedToken);
+
+  const entry = await this.blacklistedTokenRepo.findOneBy({ token: cleanedToken });
+
+  if (entry) {
+    console.log('[isBlacklisted] Entrada encontrada en blacklist:', entry);
+  } else {
+    console.log('[isBlacklisted] Token no está en blacklist.');
+  }
+
+  return !!entry;
 }
 
 async confirmAccount(activationToken: string): Promise<any> {
