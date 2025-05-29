@@ -19,4 +19,10 @@ export class User {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @Column({ nullable: true })
+  verificationToken: string;
 }

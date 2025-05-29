@@ -46,7 +46,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Registrar nuevo usuario' })
+  @ApiOperation({ summary: 'Registrar nuevo usuario (envía correo de confirmación)' }) 
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
@@ -71,15 +71,15 @@ export class AuthController {
     description: 'El email ya está registrado',
   })
   async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
-  }
+  return this.authService.register(registerDto); 
+}
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Autenticación de usuario' })
   @ApiBody({
     type: LoginDto,
-    examples: {
+    examples: { 
       example1: {
         summary: 'Ejemplo de login',
         value: {

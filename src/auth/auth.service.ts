@@ -15,6 +15,8 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { User } from '../users/entities/user.entity';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
+import { PendingUser } from './entities/pending-user.entity';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 
 @Injectable()
 export class AuthService {
