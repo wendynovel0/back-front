@@ -159,7 +159,9 @@ export class ProductsService {
     query.andWhere('product.supplier_id IN (:...supplierIds)', { supplierIds: filters.supplierIds });
   }
 
-  return query.getMany();
+  return query
+  .orderBy('product.created_at', 'DESC')
+  .getMany();
 }
 
   async findOne(id: number): Promise<Product> {

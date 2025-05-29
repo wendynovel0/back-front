@@ -7,6 +7,8 @@ import { UpdateBrandSupplierDto } from './dto/update-brand-supplier.dto';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
 import { BrandSupplierView } from './entities/brand-suppliers-view.entity';
+import { applyDefaultOrder } from '../common/helpers/query.helpers';
+
 
 @Injectable()
 export class BrandSuppliersService {
@@ -38,7 +40,6 @@ export class BrandSuppliersService {
     isActive
   } = filters;
 
-  // Validaciones de fechas (sin cambios)
   if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
     throw new BadRequestException('Debe proporcionar ambas fechas: createdStartDate y createdEndDate');
   }
@@ -110,7 +111,7 @@ export class BrandSuppliersService {
     query.andWhere('supplier.supplier_is_active = :isActive', { isActive });
   }
 
-  return query.orderBy('supplier.supplier_name', 'ASC').getMany();
+  return query.orderBy('supplier.supplier_name', 'DESC').getMany();
 }
 
   
