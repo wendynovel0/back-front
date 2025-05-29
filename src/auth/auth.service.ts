@@ -152,6 +152,9 @@ async logout(token: string): Promise<any> {
     user,
   });
 
+  console.log('[logout] Token length:', token.length);
+  console.log('[logout] Token saved:', `"${token}"`);
+
   console.log('[logout] Token guardado en blacklist');
 
   return { message: 'Sesión cerrada correctamente' };

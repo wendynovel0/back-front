@@ -7,7 +7,7 @@ export class BlacklistedToken {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ type: 'varchar', length: 500 })
+  @Column({ type: 'text'})
   token: string;
 
   @Column({ name: 'expires_at', type: 'timestamp' })

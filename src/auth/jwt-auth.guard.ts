@@ -20,6 +20,9 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   const token = normalizeToken(request.headers.authorization || '');
 
   console.log('[guard] Token recibido para validar:', token);
+  console.log('[guard] Token length:', token.length);
+  console.log('[guard] Token searched:', `"${token}"`);
+
 
   if (!token) {
     throw new UnauthorizedException('Token no proporcionado');
