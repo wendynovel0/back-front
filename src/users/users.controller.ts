@@ -125,6 +125,9 @@ async findAllWithFilters(
     email: user.email,
     is_active: user.is_active,
   }));
+
+  return filteredRecords;
+
 }
 
   @Get(':id')

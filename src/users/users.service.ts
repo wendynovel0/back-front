@@ -246,7 +246,7 @@ async findByActivationToken(token: string): Promise<User | null> {
   }
 
   return query
-  .orderBy('user.created_at', 'DESC')
+  .orderBy('product.created_at', 'DESC')
   .getMany();
 }
 }
