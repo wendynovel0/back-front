@@ -29,7 +29,7 @@ export class User {
   @Column({ type: 'timestamp', nullable: true })
   deleted_at: Date;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar',nullable: true })
   activation_token: string | null;
 
   @Column({ type: 'timestamp', nullable: true })
