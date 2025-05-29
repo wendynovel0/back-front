@@ -9,44 +9,34 @@ import { normalizeToken } from '../common/utils/token.utils';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly authService: AuthService) {
+  constructor(private authService: AuthService) {
     super();
   }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const token = normalizeToken(request.headers.authorization || '');
+  const activated = await super.canActivate(context);
+  if (!activated) return false;
 
-    console.log('[guard] Token recibido para validar:', token);
-    console.log('[guard] Token length:', token.length);
-    console.log('[guard] Token buscado:', `"${token}"`);
+  const request = context.switchToHttp().getRequest();
+  const token = this.extractTokenFromHeader(request);
 
-    if (!token) {
-      throw new UnauthorizedException('Token no proporcionado');
-    }
-
-    // Primero validamos el token con la estrategia JWT
-    const can = (await super.canActivate(context)) as boolean;
-    console.log('[guard] Resultado super.canActivate:', can);
-    if (!can) return false;
-
-    // Luego revisamos si el token está en blacklist (token inválido por logout)
-    const isBlacklisted = await this.authService.isBlacklisted(token);
-    console.log('[guard] ¿Token en blacklist?', isBlacklisted);
-
-    if (isBlacklisted) {
-      // Si está en blacklist, bloqueamos acceso con excepción
-      throw new UnauthorizedException('Token en lista negra o sesión cerrada');
-    }
-
-    // Si todo bien, permitimos acceso
-    return true;
+  if (!token) {
+    console.warn('[JwtAuthGuard] No se encontró token en el header Authorization');
+    throw new UnauthorizedException('Token no proporcionado');
   }
 
-  handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
-    if (err || !user) {
-      throw err || new UnauthorizedException('Token inválido');
-    }
-    return user;
+  const isBlacklisted = await this.authService.isBlacklisted(token);
+  if (isBlacklisted) {
+    console.warn('[JwtAuthGuard] Token está en la blacklist');
+    throw new UnauthorizedException('Token invalidado (blacklist)');
+  }
+
+  return true;
+}
+
+
+  private extractTokenFromHeader(request: Request): string | null {
+    const authHeader = request.headers['authorization'];
+    return authHeader?.split(' ')[1] || null;
   }
 }
