@@ -3,10 +3,12 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { BooleanToStringInterceptor } from './interceptors/boolean-to-string.interceptor';
+import { FormatResponseInterceptor } from './interceptors/format-response.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.useGlobalInterceptors(new FormatResponseInterceptor());
   app.useGlobalInterceptors(new BooleanToStringInterceptor());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
