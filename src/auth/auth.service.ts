@@ -56,7 +56,6 @@ export class AuthService {
   return !!entry;
 }
 
-
   async register(registerDto: RegisterDto): Promise<any> {
   const { email, password } = registerDto;
 
