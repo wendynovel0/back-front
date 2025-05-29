@@ -111,9 +111,7 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
-      return formatResponse([{
-        access_token: token
-      }]);
+      return token;
     } catch (error) {
       console.error('Error en login:', error);
 
@@ -154,7 +152,7 @@ async logout(token: string): Promise<any> {
 
   console.log('[logout] Token guardado en blacklist');
 
-  return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
+  return { message: 'Sesión cerrada correctamente' };
 }
 
 async confirmAccount(activationToken: string): Promise<any> {
@@ -203,14 +201,4 @@ async confirmAccount(activationToken: string): Promise<any> {
   private isValidBcryptHash(hash: string): boolean {
     return hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$');
   }
-}
-
-function formatResponse(records: any[]): any {
-  return {
-    success: true,
-    data: {
-      records,
-      total_count: records.length,
-    },
-  };
 }
