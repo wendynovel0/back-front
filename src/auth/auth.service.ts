@@ -157,7 +157,7 @@ async logout(token: string): Promise<any> {
     console.log('[isBlacklisted] Token no está en blacklist.');
   }
 
-  console.log('[logout] SHA:', require('crypto').createHash('sha256').update(cleanedToken).digest('hex'));
+  console.log('[blacklist] SHA:', require('crypto').createHash('sha256').update(cleanedToken).digest('hex'));
 
   return !!entry;
 }
