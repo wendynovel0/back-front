@@ -34,27 +34,24 @@ export class AuthService {
   async isBlacklisted(token: string): Promise<boolean> {
   const cleanedToken = token.replace(/^Bearer\s+/i, '').trim();
 
-  if (!cleanedToken) return true;
+  if (!cleanedToken) {
+    console.warn('[isBlacklisted] Token vacío después de limpiar. Se considera inválido.');
+    return true;
+  }
 
-  console.log('[isBlacklisted] Buscando token:', cleanedToken);
+  console.log('[isBlacklisted] Buscando token exacto:', cleanedToken);
 
-  let entry = await this.blacklistedTokenRepo.findOne({
-    where: { token: cleanedToken },
-  });
+  const entry = await this.blacklistedTokenRepo.findOneBy({ token: cleanedToken });
 
-  if (!entry) {
-    // Intento de búsqueda "fuzzy" para debug
-    const partialToken = cleanedToken.substring(0, 20);
-    const similarEntry = await this.blacklistedTokenRepo.findOne({
-      where: { token: Like(`%${partialToken}%`) },
-    });
-    console.log('[isBlacklisted] Entrada similar encontrada con LIKE:', similarEntry);
+  if (entry) {
+    console.log('[isBlacklisted] Entrada encontrada en blacklist:', entry);
   } else {
-    console.log('[isBlacklisted] Entrada encontrada:', entry);
+    console.log('[isBlacklisted] Token no está en blacklist.');
   }
 
   return !!entry;
 }
+
 
   async register(registerDto: RegisterDto): Promise<any> {
   const { email, password } = registerDto;
