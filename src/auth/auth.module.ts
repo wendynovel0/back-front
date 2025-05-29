@@ -11,11 +11,14 @@ import { AuthController } from './auth.controller';
 import { User } from '../users/entities/user.entity';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
 import { UsersModule } from '../users/users.module';
+import { PendingUser } from './entities/pending-user.entity';
+import { PendingUserService } from 'src/auth/services/pending-user.service';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-
+    TypeOrmModule.forFeature([User, BlacklistedToken, PendingUser]),
+    TypeOrmModule.forFeature([User, BlacklistedToken, PendingUser]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -33,7 +36,7 @@ import { UsersModule } from '../users/users.module';
     ConfigModule, // ✅ Importado por si no es global
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, PendingUserService,],
   exports: [JwtModule, PassportModule, AuthService]
 })
 export class AuthModule {}
