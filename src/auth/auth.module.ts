@@ -11,32 +11,35 @@ import { AuthController } from './auth.controller';
 import { User } from '../users/entities/user.entity';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
 import { UsersModule } from '../users/users.module';
-import { PendingUser } from './entities/pending-user.entity';
-import { PendingUserService } from 'src/auth/services/pending-user.service';
+import { UserVerificationService } from 'src/auth/services/user-verification.service';
+
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    TypeOrmModule.forFeature([User, BlacklistedToken, PendingUser]),
-    TypeOrmModule.forFeature([User, BlacklistedToken, PendingUser]),
+
+    TypeOrmModule.forFeature([User, BlacklistedToken]),
+
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: config.get<string>('JWT_EXPIRES_IN', '1h')
-        }
-      })
+          expiresIn: config.get<string>('JWT_EXPIRES_IN', '1h'),
+        },
+      }),
     }),
 
-    forwardRef(() => UsersModule), // ✅ Para poder usar UserService
-    TypeOrmModule.forFeature([User, BlacklistedToken]),
+    forwardRef(() => UsersModule), 
 
-    ConfigModule, // ✅ Importado por si no es global
+    MailModule, 
+
+    ConfigModule, 
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, PendingUserService,],
-  exports: [JwtModule, PassportModule, AuthService]
+  providers: [AuthService, JwtStrategy, UserVerificationService],
+  exports: [JwtModule, PassportModule, AuthService, UserVerificationService],
 })
 export class AuthModule {}

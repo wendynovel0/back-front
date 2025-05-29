@@ -2,13 +2,16 @@ import {
   Controller,
   Post,
   Body,
+  Get,
   HttpStatus,
   HttpCode,
   Req,
   UseGuards,
   UnauthorizedException,
+  Param, BadRequestException
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
+import { UserService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Request } from 'express';
@@ -18,6 +21,7 @@ import {
   ApiResponse,
   ApiBody,
   ApiBearerAuth,
+  ApiParam
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { formatResponse } from '../common/utils/response-format';
@@ -25,7 +29,11 @@ import { formatResponse } from '../common/utils/response-format';
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
+
 
   @UseGuards(JwtAuthGuard)
   @Post('logout')
@@ -74,39 +82,61 @@ export class AuthController {
   return this.authService.register(registerDto); 
 }
 
-  @Post('login')
+@Get('confirm/:activationToken')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Autenticación de usuario' })
-  @ApiBody({
-    type: LoginDto,
-    examples: { 
-      example1: {
-        summary: 'Ejemplo de login',
-        value: {
-          email: 'usuario@ejemplo.com',
-          password: 'PasswordSeguro123!',
-        },
-      },
-    },
-  })
+  @ApiOperation({ summary: 'Confirmar cuenta con token de activación' })
+  @ApiParam({ name: 'activationToken', description: 'Token de activación enviado por email' })
   @ApiResponse({
     status: HttpStatus.OK,
-    schema: {
-      example: {
-        expires_in: 3600,
-        login_token: 'tokenEjemplo',
+    description: 'Cuenta activada correctamente',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Token inválido o expirado',
+  })
+  async confirmAccount(@Param('activationToken') activationToken: string) {
+    try {
+      const message = await this.authService.confirmAccount(activationToken);
+      return formatResponse([{ message }]);
+    } catch (error) {
+      throw new BadRequestException(error.message || 'Token inválido o expirado');
+    }
+  }
+
+
+  @Post('login')
+@HttpCode(HttpStatus.OK)
+@ApiOperation({ summary: 'Autenticación de usuario' })
+@ApiBody({
+  type: LoginDto,
+  examples: { 
+    example1: {
+      summary: 'Ejemplo de login',
+      value: {
+        email: 'usuario@ejemplo.com',
+        password: 'PasswordSeguro123!',
       },
     },
-  })
-  @ApiResponse({
-    status: HttpStatus.UNAUTHORIZED,
-    description: 'Credenciales inválidas',
-  })
-  @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
-    description: 'Cuenta desactivada',
-  })
-  async login(@Body() loginDto: LoginDto) {
-    return this.authService.login(loginDto);
-  }
+  },
+})
+@ApiResponse({
+  status: HttpStatus.OK,
+  schema: {
+    example: {
+      expires_in: 3600,
+      login_token: 'tokenEjemplo',
+    },
+  },
+})
+@ApiResponse({
+  status: HttpStatus.UNAUTHORIZED,
+  description: 'Credenciales inválidas',
+})
+@ApiResponse({
+  status: HttpStatus.FORBIDDEN,
+  description: 'Cuenta desactivada',
+})
+async login(@Body() loginDto: LoginDto) {
+  return this.authService.login(loginDto);
+}
 }

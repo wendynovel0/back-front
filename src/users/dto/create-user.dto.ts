@@ -1,5 +1,12 @@
 // src/users/dto/create-user.dto.ts
-import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsDate,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
@@ -13,8 +20,18 @@ export class CreateUserDto {
   @IsNotEmpty()
   password_hash: string;
 
-  @ApiPropertyOptional({ example: true, default: true })
+  @ApiPropertyOptional({ example: true, default: false })
   @IsBoolean()
   @IsOptional()
   is_active?: boolean;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  activation_token?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsDate()
+  activated_at?: Date;
 }

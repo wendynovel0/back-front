@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  Column,
+  PrimaryGeneratedColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('users')
 export class User {
@@ -11,18 +17,21 @@ export class User {
   @Column()
   password_hash: string;
 
-  @Column({ default: true })
+  @Column({ default: false })
   is_active: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ type: 'timestamp' })
   updated_at: Date;
 
-  @Column({ default: false })
-  isVerified: boolean;
+  @Column({ type: 'timestamp', nullable: true })
+  deleted_at: Date;
 
   @Column({ nullable: true })
-  verificationToken: string;
+  activation_token: string | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  activated_at: Date;
 }
