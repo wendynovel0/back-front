@@ -4,7 +4,8 @@ import {
   ConflictException,
   InternalServerErrorException,
   Inject,
-  forwardRef
+  forwardRef,
+  ForbiddenException
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -15,7 +16,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { User } from '../users/entities/user.entity';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
-import { PendingUser } from './entities/pending-user.entity';
+import { MailService } from '../mail/mail.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class AuthService {
     @Inject(forwardRef(() => UserService))
     private readonly usersService: UserService,
     private readonly jwtService: JwtService,
+    private readonly mailService: MailService,
     @InjectRepository(BlacklistedToken)
     private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
   ) {}
@@ -74,15 +76,20 @@ export class AuthService {
   try {
     const hashedPassword = await this.hashPassword(password);
 
+    const activationToken = crypto.randomUUID(); // o usa un generador seguro
+
     await this.usersService.create({
       email: normalizedEmail,
       password_hash: hashedPassword,
-      is_active: true,
+      is_active: false,
+      activation_token: activationToken,
     });
+
+    await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
 
     return {
       success: true,
-      message: 'Usuario agregado correctamente',
+      message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
     };
   } catch (error) {
     console.error('Error en registro:', error);
@@ -150,28 +157,33 @@ async logout(token: string): Promise<any> {
   return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
 }
 
+async confirmAccount(activationToken: string): Promise<any> {
+  return this.usersService.confirmUser(activationToken);
+}
+
 
   private async validateUser(email: string, password: string): Promise<User> {
-    if (!email || !password) {
-      throw new UnauthorizedException('Se requieren email y contraseña');
-    }
-
-    const user = await this.usersService.findByEmailWithPassword(email);
-    if (!user) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
-
-    if (!user.is_active) {
-      throw new UnauthorizedException('La cuenta está desactivada');
-    }
-
-    const isValidPassword = await this.comparePasswords(password, user.password_hash);
-    if (!isValidPassword) {
-      throw new UnauthorizedException('Credenciales inválidas');
-    }
-
-    return user;
+  if (!email || !password) {
+    throw new UnauthorizedException('Se requieren email y contraseña');
   }
+
+  const user = await this.usersService.findByEmailWithPassword(email);
+  if (!user) {
+    throw new UnauthorizedException('Credenciales inválidas');
+  }
+
+  if (!user.is_active) {
+    throw new ForbiddenException('La cuenta está desactivada');
+  }
+
+  const isValidPassword = await this.comparePasswords(password, user.password_hash);
+  if (!isValidPassword) {
+    throw new UnauthorizedException('Credenciales inválidas');
+  }
+
+  return user;
+}
+
 
   private async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
