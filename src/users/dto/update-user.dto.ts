@@ -11,6 +11,5 @@ export class UpdateUserDto {
   activation_token?: string | null;
 
   @IsOptional()
-  @IsDate()
   activated_at?: Date;
 }
