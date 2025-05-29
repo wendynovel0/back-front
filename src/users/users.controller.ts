@@ -130,13 +130,15 @@ async findAllWithFilters(
 
 }
 
-  @Get(':id')
+ @Get(':id')
 @ApiOkResponse({ description: 'Usuario obtenido correctamente' })
 @ApiUnauthorizedResponse({ description: 'No autorizado: token faltante o inválido' })
 @ApiForbiddenResponse({ description: 'Acceso denegado' })
 async findOne(@Param('id') id: string) {
   const user = await this.userService.findOne(+id);
+  return user; 
 }
+
 
 
   @Put(':id')
