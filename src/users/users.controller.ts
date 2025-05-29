@@ -125,9 +125,6 @@ async findAllWithFilters(
     email: user.email,
     is_active: user.is_active,
   }));
-
-  // Retornas la respuesta formateada
-  return formatResponse(filteredRecords);
 }
 
   @Get(':id')
@@ -136,8 +133,6 @@ async findAllWithFilters(
 @ApiForbiddenResponse({ description: 'Acceso denegado' })
 async findOne(@Param('id') id: string) {
   const user = await this.userService.findOne(+id);
-
-  return formatResponse(user ? [user] : []);
 }
 
 
