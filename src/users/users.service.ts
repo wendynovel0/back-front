@@ -62,11 +62,12 @@ export class UserService {
     return this.userRepository.find();
   }
 
-  async findOneActive(user_id: number): Promise<User | null> {
-    return this.userRepository.findOne({
-      where: { user_id, is_active: true },
-    });
-  }
+  async findOneInactive(user_id: number): Promise<User | null> {
+  return this.userRepository.findOne({
+    where: { user_id, is_active: false },
+  });
+}
+
 
   async findOne(id: number): Promise<Partial<UsersView>> {
   const user = await this.usersViewRepository.findOne({ where: { user_id: id } });
@@ -150,50 +151,66 @@ async findByActivationToken(token: string): Promise<User | null> {
   };
 }
   
-  async update(
-    id: number,
-    updateUserDto: UpdateUserDto,
-    performedBy: number,
-    ip?: string,
-  ): Promise<User> {
-    const user = await this.findOne(id);
-    const oldValue = { ...user };
-
-    Object.assign(user, updateUserDto);
-    const updatedUser = await this.userRepository.save(user);
-
-    await this.actionLogsService.logAction({
-      userId: performedBy,
-      actionType: 'UPDATE',
-      entityType: 'user',
-      entityId: updatedUser.user_id,
-      oldValue,
-      newValue: updatedUser,
-      ipAddress: ip,
-    });
-
-    return updatedUser;
+ async update(
+  id: number,
+  updateUserDto: UpdateUserDto,
+  performedBy: number,
+  ip?: string,
+): Promise<User> {
+  const user = await this.findOneInactive(id); // busca solo si está inactivo
+  if (!user) {
+    throw new NotFoundException('El usuario no existe o ya está activo');
   }
+
+  const oldValue = { ...user };
+
+  // Activar usuario y poner fecha de activación
+  user.is_active = true;
+  user.activated_at = new Date();
+
+  Object.assign(user, updateUserDto);
+  const updatedUser = await this.userRepository.save(user);
+
+  await this.actionLogsService.logAction({
+    userId: performedBy,
+    actionType: 'UPDATE',
+    entityType: 'user',
+    entityId: updatedUser.user_id,
+    oldValue,
+    newValue: updatedUser,
+    ipAddress: ip,
+  });
+
+  return updatedUser;
+}
 
   async remove(id: number, performedBy: number, ip?: string): Promise<void> {
-  const userForLog = await this.findOne(id);
+  const user = await this.userRepository.findOne({ where: { user_id: id } });
 
-  const userEntity = await this.userRepository.findOne({ where: { user_id: id } });
-  if (!userEntity) {
+  if (!user) {
     throw new NotFoundException('User not found');
   }
+
+  const oldValue = { ...user };
+
+  // Soft delete: desactivar y poner fecha
+  user.is_active = false;
+  user.deleted_at = new Date();
+
+  const updatedUser = await this.userRepository.save(user);
 
   await this.actionLogsService.logAction({
     userId: performedBy,
     actionType: 'DELETE',
     entityType: 'user',
-    entityId: userEntity.user_id,
-    oldValue: userForLog, 
+    entityId: updatedUser.user_id,
+    oldValue,
+    newValue: updatedUser,
     ipAddress: ip,
   });
 
-  await this.userRepository.remove(userEntity);
 }
+
 
 
   async findByEmail(email: string): Promise<User | null> {
