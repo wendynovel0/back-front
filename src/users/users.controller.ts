@@ -117,8 +117,6 @@ async findAllWithFilters(
   }));
 }
 
-
-
  @Get(':id')
 @ApiOkResponse({ description: 'Usuario obtenido correctamente' })
 @ApiUnauthorizedResponse({ description: 'No autorizado: token faltante o inválido' })
