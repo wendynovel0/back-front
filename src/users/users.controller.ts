@@ -33,6 +33,7 @@ import { User } from './entities/user.entity';
 import { UsersView } from './entities/users-view.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { formatResponse } from '../common/utils/response-format';
+import { Filters } from '../common/interfaces/filters.interface'
 
 @ApiTags('Users')
 @ApiBearerAuth()
@@ -71,6 +72,8 @@ async findAllWithFilters(
   @Query('createdEndDate') createdEndDate: string,
   @Query('updatedStartDate') updatedStartDate: string,
   @Query('updatedEndDate') updatedEndDate: string,
+  @Query('deletedStartDate') deletedStartDate: string,
+  @Query('deletedEndDate') deletedEndDate: string,
   @Query('isActive') isActive: string,
   @CurrentUser() user: any
 ) {
@@ -78,48 +81,51 @@ async findAllWithFilters(
     throw new UnauthorizedException('Token inválido o no proporcionado');
   }
 
-  if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
-    throw new BadRequestException('Debe proporcionar ambas fechas de creación');
+  let dateFilter: Filters['dateFilter'] = undefined;
+
+  const filterSets = [
+    { type: 'created_at', start: createdStartDate, end: createdEndDate },
+    { type: 'updated_at', start: updatedStartDate, end: updatedEndDate },
+    { type: 'deleted_at', start: deletedStartDate, end: deletedEndDate },
+  ];
+
+  const usedFilters = filterSets.filter(f => f.start || f.end);
+
+  if (usedFilters.length > 1) {
+    throw new BadRequestException('Solo puede aplicar un tipo de filtro de fecha a la vez');
   }
 
-  if (createdStartDate && createdEndDate) {
-    const start = new Date(createdStartDate);
-    const end = new Date(createdEndDate);
-    if (start > end) {
-      throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
+  const activeFilter = usedFilters[0];
+  if (activeFilter) {
+    if (!activeFilter.start || !activeFilter.end) {
+      throw new BadRequestException(`Debe proporcionar ambas fechas para ${activeFilter.type}`);
     }
-  }
 
-  if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
-    throw new BadRequestException('Debe proporcionar ambas fechas de actualización');
-  }
-
-  if (updatedStartDate && updatedEndDate) {
-    const start = new Date(updatedStartDate);
-    const end = new Date(updatedEndDate);
+    const start = new Date(activeFilter.start);
+    const end = new Date(activeFilter.end);
     if (start > end) {
-      throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
+      throw new BadRequestException(`${activeFilter.type} startDate no puede ser mayor que endDate`);
     }
+
+    dateFilter = {
+      dateType: activeFilter.type as 'created_at' | 'updated_at' | 'deleted_at',
+      startDate: activeFilter.start,
+      endDate: activeFilter.end,
+    };
   }
 
   const isActiveLower = isActive?.toLowerCase();
-  const isActiveBoolean = isActiveLower === 'true'
-    ? true
-    : isActiveLower === 'false'
-    ? false
-    : undefined;
+  const isActiveBoolean =
+    isActiveLower === 'true' ? true : isActiveLower === 'false' ? false : undefined;
 
-  // Llamas al servicio para obtener los registros
-  const records = await this.userService.findAllWithFilters({
+  const filters: Filters = {
     email,
-    createdStartDate,
-    createdEndDate,
-    updatedStartDate,
-    updatedEndDate,
     is_active: isActiveBoolean,
-  });
+    dateFilter,
+  };
 
-  // Mapeas para devolver solo los campos necesarios
+  const records = await this.userService.findAllWithFilters(filters);
+
   const filteredRecords = records.map(user => ({
     user_id: user.user_id,
     email: user.email,
@@ -127,8 +133,8 @@ async findAllWithFilters(
   }));
 
   return filteredRecords;
-
 }
+
 
  @Get(':id')
 @ApiOkResponse({ description: 'Usuario obtenido correctamente' })
