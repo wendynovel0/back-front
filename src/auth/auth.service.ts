@@ -18,9 +18,12 @@ import { User } from '../users/entities/user.entity';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
 import { MailService } from '../mail/mail.service';
 import { normalizeToken } from '../common/utils/token.utils';
+import { LogsModule } from 'src/action-logs/action-logs.module';
+
 
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { formatResponse } from 'src/common/utils/response-format';
+import { ActionLogsService } from 'src/action-logs/action-logs.service';
 
 @Injectable()
 export class AuthService {
@@ -33,6 +36,7 @@ export class AuthService {
     private readonly mailService: MailService,
     @InjectRepository(BlacklistedToken)
     private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
+    private readonly actionLogsService: ActionLogsService,
   ) {}
 
 
@@ -80,30 +84,43 @@ export class AuthService {
 
 
   async login(loginDto: LoginDto): Promise<any> {
-    try {
-      const normalizedEmail = loginDto.email.toLowerCase().trim();
-      const user = await this.validateUser(normalizedEmail, loginDto.password);
+  try {
+    const normalizedEmail = loginDto.email.toLowerCase().trim();
+    const user = await this.validateUser(normalizedEmail, loginDto.password);
 
-      const payload = {
-        sub: user.user_id,
-        email: user.email,
-        is_active: user.is_active,
-      };
+    const payload = {
+      sub: user.user_id,
+      email: user.email,
+      is_active: user.is_active,
+    };
 
-      const token = this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload);
 
-      return formatResponse([{
-        access_token: token,
-          userId: user.user_id,
-          email: user.email
-        }]);
-    } catch (error) {
-      console.error('Error en login:', error);
-      throw new UnauthorizedException('Email o contraseña incorrectos');
-    }
+    await this.actionLogsService.logAction({
+      userId: user.user_id,
+      actionType: 'SESSION_LOGIN',
+      entityType: 'user',
+      entityId: user.user_id,
+    });
+
+    return formatResponse([{
+      access_token: token,
+      userId: user.user_id,
+      email: user.email
+    }]);
+  } catch (error) {
+    console.error('Error en login:', error);
+
+
+    await this.actionLogsService.logAction({
+      userId: -1, 
+      actionType: 'SESSION_LOGIN_FAILED',
+      entityType: 'user',
+    });
+
+    throw new UnauthorizedException('Email o contraseña incorrectos');
   }
-
-  
+}
 
 async logout(token: string): Promise<any> {
   const normalizedToken = normalizeToken(token);
@@ -128,16 +145,23 @@ async logout(token: string): Promise<any> {
     user,
   });
 
+
+  await this.actionLogsService.logAction({
+    userId: decoded.sub,
+    actionType: 'SESSION_LOGOUT',
+    entityType: 'user',
+    entityId: decoded.sub,
+  });
+
   console.log('[logout] Token length:', token.length);
   console.log('[logout] Token saved:', `"${token}"`);
-
   console.log('[logout] Token guardado en blacklist');
   console.log('[logout] SHA:', require('crypto').createHash('sha256').update(normalizedToken).digest('hex'));
 
   return { message: 'Sesión cerrada correctamente' };
-  
 }
-  async isBlacklisted(token: string): Promise<boolean> {
+
+async isBlacklisted(token: string): Promise<boolean> {
   const cleanedToken = normalizeToken(token);
 
   if (!cleanedToken) {
