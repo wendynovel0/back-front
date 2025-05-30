@@ -23,6 +23,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nes
 import { formatResponse } from 'src/common/utils/response-format';
 import { ActionLogsService } from 'src/action-logs/action-logs.service';
 
+
 @Injectable()
 export class AuthService {
   private readonly SALT_ROUNDS = 12;
@@ -94,7 +95,8 @@ export class AuthService {
     };
 
     const token = this.jwtService.sign(payload);
-
+    const expiresIn = 3600; // 1 hora
+    
     await this.actionLogsService.logAction({
       userId: user.user_id,
       actionType: 'SESSION_LOGIN',
@@ -102,11 +104,11 @@ export class AuthService {
       entityId: user.user_id,
     });
 
-    return formatResponse([{
-      access_token: token,
-      userId: user.user_id,
-      email: user.email
-    }]);
+    return {
+  expires_in: expiresIn,
+  login_token: token
+};
+
   } catch (error) {
     console.error('Error en login:', error);
 
