@@ -6,11 +6,11 @@ import { ActionLog } from './entities/action-log.entity';
 import { User } from '../users/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { LogsView } from './entities/logs-view.entity';
-
+import { forwardRef} from '@nestjs/common';
 @Module({
   imports: [
     TypeOrmModule.forFeature([ActionLog, User, LogsView]),
-    AuthModule,
+    forwardRef(() => AuthModule),
   ],
   controllers: [ActionLogsController],
   providers: [ActionLogsService],
