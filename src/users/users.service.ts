@@ -261,7 +261,7 @@ async findOneActive(user_id: number): Promise<User | null> {
   applyDateRangeFilter(query, 'user', { dateType, startDate, endDate });
 }
 
-  return query.orderBy('user.created_at', 'DESC').getMany();
+  return query.orderBy(`"user"."created_at"`, 'DESC').getMany();
 }
 
 //Para mail de activación
