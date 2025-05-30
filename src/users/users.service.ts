@@ -83,9 +83,7 @@ export class UserService {
   };
 }
 
-async findByActivationToken(token: string): Promise<User | null> {
-    return this.userRepository.findOne({ where: { activation_token: token } });
-  }
+
 
   async replace(
     id: number,
@@ -127,29 +125,6 @@ async findByActivationToken(token: string): Promise<User | null> {
 
     return replacedUser;
   }
-
-
-  async confirmUser(activationToken: string): Promise<any> {
-  const user = await this.findByActivationToken(activationToken);
-
-  if (!user) {
-    throw new NotFoundException('Token de activación inválido o expirado');
-  }
-
-  const updateUserDto: UpdateUserDto = {
-    is_active: true,
-    activation_token: null,
-    activated_at: new Date(),
-  };
-
-  // Usa tu método update, por ejemplo indicando que el usuario se actualiza a sí mismo
-  await this.update(user.user_id, updateUserDto, user.user_id);
-
-  return {
-    success: true,
-    message: 'Usuario activado correctamente',
-  };
-}
   
  async update(
   id: number,
@@ -211,8 +186,6 @@ async findByActivationToken(token: string): Promise<User | null> {
 
 }
 
-
-
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }
@@ -266,4 +239,54 @@ async findByActivationToken(token: string): Promise<User | null> {
   .orderBy('user.created_at', 'DESC')
   .getMany();
 }
+
+
+//Para mail de activación
+async findByActivationToken(token: string): Promise<User | null> {
+    return this.userRepository.findOne({ where: { activation_token: token } });
+  }
+
+  async activateUser(token: string): Promise<User> {
+    const user = await this.findByActivationToken(token);
+    if (!user) {
+      throw new NotFoundException('Token inválido');
+    }
+    user.is_active = true;
+    user.activation_token = null;
+    return this.userRepository.save(user); 
+  }
+
+async activateUserByToken(token: string): Promise<void> {
+  const result = await this.userRepository.update(
+    { activation_token: token },
+    { 
+      is_active: true,
+      activation_token: null,
+      activated_at: new Date() 
+    }
+  );
+
+  if (result.affected === 0) {
+    throw new NotFoundException('Token de activación inválido');
+  }
+}
+
+  async confirmUser(activationToken: string): Promise<any> {
+    const user = await this.findByActivationToken(activationToken);
+    if (!user) {
+      throw new NotFoundException('Token de activación inválido o expirado');
+    }
+
+    const updateUserDto: UpdateUserDto = {
+      is_active: true,
+      activation_token: null,
+      activated_at: new Date(),
+    };
+
+    await this.update(user.user_id, updateUserDto, user.user_id);
+    return {
+      success: true,
+      message: 'Usuario activado correctamente',
+    };
+  }
 }

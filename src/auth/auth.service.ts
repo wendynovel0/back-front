@@ -20,6 +20,7 @@ import { MailService } from '../mail/mail.service';
 import { normalizeToken } from '../common/utils/token.utils';
 
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { formatResponse } from 'src/common/utils/response-format';
 
 @Injectable()
 export class AuthService {
@@ -91,21 +92,18 @@ export class AuthService {
 
       const token = this.jwtService.sign(payload);
 
-      return token;
+      return formatResponse([{
+        access_token: token,
+          userId: user.user_id,
+          email: user.email
+        }]);
     } catch (error) {
       console.error('Error en login:', error);
-
-      if (error instanceof UnauthorizedException) {
-        throw new UnauthorizedException('Email o contraseña incorrectos');
-      }
-
-      throw new InternalServerErrorException('Error al iniciar sesión');
+      throw new UnauthorizedException('Email o contraseña incorrectos');
     }
   }
 
-  private normalizeToken(token: string): string {
-  return token.replace(/^Bearer\s+/i, '').trim();
-}
+  
 
 async logout(token: string): Promise<any> {
   const normalizedToken = normalizeToken(token);
@@ -137,8 +135,8 @@ async logout(token: string): Promise<any> {
   console.log('[logout] SHA:', require('crypto').createHash('sha256').update(normalizedToken).digest('hex'));
 
   return { message: 'Sesión cerrada correctamente' };
+  
 }
-
   async isBlacklisted(token: string): Promise<boolean> {
   const cleanedToken = normalizeToken(token);
 
@@ -178,34 +176,34 @@ async logout(token: string): Promise<any> {
   }
 }
 
-async confirmAccount(activationToken: string): Promise<any> {
-  return this.usersService.confirmUser(activationToken);
+async confirmAccount(token: string): Promise<{ message: string }> {
+  await this.usersService.activateUserByToken(token);   
+  return { message: 'Cuenta activada exitosamente' };
 }
-
 
   private async validateUser(email: string, password: string): Promise<User> {
-  if (!email || !password) {
-    throw new UnauthorizedException('Se requieren email y contraseña');
+    const user = await this.usersService.findByEmailWithPassword(email);
+    
+    if (!user) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    if (!user.is_active) {
+      throw new ForbiddenException('La cuenta no está activada. Por favor verifica tu email.');
+    }
+
+    const isValidPassword = await this.comparePasswords(password, user.password_hash);
+    if (!isValidPassword) {
+      throw new UnauthorizedException('Credenciales inválidas');
+    }
+
+    return user;
   }
 
-  const user = await this.usersService.findByEmailWithPassword(email);
-  if (!user) {
-    throw new UnauthorizedException('Credenciales inválidas');
+ private normalizeToken(token: string): string {
+    return token.replace(/^Bearer\s+/i, '').trim();
   }
-
-  if (!user.is_active) {
-    throw new ForbiddenException('La cuenta está desactivada');
-  }
-
-  const isValidPassword = await this.comparePasswords(password, user.password_hash);
-  if (!isValidPassword) {
-    throw new UnauthorizedException('Credenciales inválidas');
-  }
-
-  return user;
-}
-
-
+  
   private async hashPassword(password: string): Promise<string> {
     const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
     return await bcrypt.hash(password, salt);
@@ -213,13 +211,9 @@ async confirmAccount(activationToken: string): Promise<any> {
 
   private async comparePasswords(plainTextPassword: string, hash: string): Promise<boolean> {
     if (!plainTextPassword || !hash) return false;
-
-    if (!this.isValidBcryptHash(hash)) {
-      return plainTextPassword === hash;
-    }
-
-    return await bcrypt.compare(plainTextPassword, hash);
+    return bcrypt.compare(plainTextPassword, hash);
   }
+
 
   private isValidBcryptHash(hash: string): boolean {
     return hash.startsWith('$2a$') || hash.startsWith('$2b$') || hash.startsWith('$2y$');

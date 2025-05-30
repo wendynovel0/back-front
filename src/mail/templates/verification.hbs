@@ -1,11 +1,8 @@
 <!DOCTYPE html>
-  <div>
-    <h1>Hola {{username}},</h1>
-    <p>Gracias por registrarte en {{appName}}.</p>
-    <p>Por favor verifica tu cuenta haciendo clic en el siguiente enlace:</p>
-    <a href="{{activationUrl}}">Activar cuenta</a>
-    <p>Si no solicitaste este registro, ignora este mensaje.</p>
-    <footer>
-      <p>© {{currentYear}} {{appName}}. Todos los derechos reservados.</p>
-    </footer>
-  </div>
+<div style="font-family: Arial; max-width: 600px; margin: 0 auto; text-align: center;">
+  <h1>Hola {{email}},</h1>
+  <p>Por favor verifica tu cuenta haciendo clic en el enlace:</p>
+  <a href="{{activationUrl}}" style="background: #4CAF50; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0;">
+    Activar cuenta
+  </a>
+</div>
