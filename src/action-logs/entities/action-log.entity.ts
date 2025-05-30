@@ -38,7 +38,11 @@ export class ActionLog {
   @CreateDateColumn({
     name: 'action_timestamp',
     type: 'date',
-    default: () => 'CURRENT_DATE',
+    default: () => 'CURRENT_DATE'
   })
   actionTimestamp: Date;
+
+  @Column({ name: 'deleted_at', type: 'date', nullable: true })
+  deletedAt?: Date;
+
 }

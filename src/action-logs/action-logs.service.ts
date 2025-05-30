@@ -9,44 +9,44 @@ import { LogsView } from './entities/logs-view.entity';
 export class ActionLogsService {
   constructor(
     @InjectRepository(ActionLog)
-    private actionLogRepository: Repository<ActionLog>,
+    private readonly actionLogRepo: Repository<ActionLog>,
 
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
 
     @InjectRepository(LogsView)
-    private logsViewRepository: Repository<LogsView>,
+    private readonly logsViewRepository: Repository<LogsView>,
   ) {}
 
   async logAction(logData: {
-    userId: number;
-    actionType: string;
-    entityType: string;
-    entityId?: number;
-    oldValue?: any;
-    newValue?: any;
-    ipAddress?: string;
-  }): Promise<ActionLog> {
-    const user = await this.userRepository.findOne({
-      where: { user_id: logData.userId },
-    });
+  userId: number; 
+  actionType: string;
+  entityType: string;
+  entityId?: number; 
+  oldValue?: any;
+  newValue?: any;
+  ipAddress?: string;
+}): Promise<ActionLog> {
+  const user = await this.userRepository.findOne({
+    where: { user_id: logData.userId },
+  });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${logData.userId} not found`);
     }
 
-    const log = this.actionLogRepository.create({
-      user,
-      userId: user.user_id,
-      actionType: logData.actionType,
-      tableAffected: logData.entityType,
-      recordId: logData.entityId,
-      oldValues: logData.oldValue,
-      newValues: logData.newValue,
-    });
+  const log = this.actionLogRepo.create({
+    user: user,
+    userId: logData.userId,
+    actionType: logData.actionType,
+    tableAffected: logData.entityType,
+    recordId: logData.entityId ?? -1, 
+    oldValues: logData.oldValue,
+    newValues: logData.newValue,
+  });
 
-    return this.actionLogRepository.save(log);
-  }
+  return await this.actionLogRepo.save(log);
+}
 
   async findAllWithFilters(filters: {
     userId?: number;
@@ -62,10 +62,10 @@ export class ActionLogsService {
     }
 
     if (filters.actionType) {
-  query.andWhere('UPPER(log.action_type) = :actionType', {
-    actionType: filters.actionType.toUpperCase(),
-  });
-}
+      query.andWhere('UPPER(log.action_type) = :actionType', {
+        actionType: filters.actionType.toUpperCase(),
+      });
+    }
 
     if (filters.tableAffected) {
       query.andWhere('log.table_affected = :tableAffected', {
@@ -74,21 +74,21 @@ export class ActionLogsService {
     }
 
     if (filters.startDate && !filters.endDate) {
-  throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio');
-}
+      throw new BadRequestException('Debe proporcionar una fecha de fin si se especifica la fecha de inicio');
+    }
 
-const now = new Date();
-if (filters.startDate && new Date(filters.startDate) > now) {
-  throw new BadRequestException('La fecha de inicio no puede estar en el futuro');
-}
+    const now = new Date();
+    if (filters.startDate && new Date(filters.startDate) > now) {
+      throw new BadRequestException('La fecha de inicio no puede estar en el futuro');
+    }
 
-if (filters.endDate && new Date(filters.endDate) > now) {
-  throw new BadRequestException('La fecha de fin no puede estar en el futuro');
-}
+    if (filters.endDate && new Date(filters.endDate) > now) {
+      throw new BadRequestException('La fecha de fin no puede estar en el futuro');
+    }
 
-if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
-  throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha de fin');
-}
+    if (filters.startDate && filters.endDate && filters.startDate > filters.endDate) {
+      throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha de fin');
+    }
 
     if (filters.startDate && filters.endDate) {
       query.andWhere('log.action_timestamp BETWEEN :startDate AND :endDate', {
@@ -102,8 +102,8 @@ if (filters.startDate && filters.endDate && filters.startDate > filters.endDate)
     return logs;
   }
 
-  // Ejemplo del formato de retorno de findAllWithFilters:
   /*
+  Ejemplo del formato de retorno de findAllWithFilters:
   [
     {
       "log_id": 1,
