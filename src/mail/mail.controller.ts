@@ -1,44 +1,38 @@
-import { Module } from '@nestjs/common';
-import { MailerModule } from '@nestjs-modules/mailer';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MailService } from './mail.service';
-import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
-import { join } from 'path';
+import { Controller, Get } from '@nestjs/common';
+import { MailerService } from '@nestjs-modules/mailer';
+import { ConfigService } from '@nestjs/config';
 
-@Module({
-  imports: [
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
-        transport: {
-          host: config.get('MAIL_HOST', 'sandbox.smtp.mailtrap.io'),
-          port: config.get('MAIL_PORT', 2525),
-          secure: config.get('MAIL_SECURE', false),
-          auth: {
-            user: config.get('MAIL_USER'),
-            pass: config.get('MAIL_PASSWORD'),
-          },
-          pool: true,
-          maxConnections: 5,
-          rateLimit: 5
-        },
-        defaults: {
-          from: `"${config.get('MAIL_FROM_NAME', 'No Reply')}" <${config.get('MAIL_FROM_ADDRESS', 'no-reply@example.com')}>`,
-        },
-        template: {
-          dir: join(__dirname, 'templates'),
-          adapter: new HandlebarsAdapter(),
-          options: {
-            strict: true,
-          },
-        },
-        logger: config.get('NODE_ENV') === 'development',
-        debug: config.get('NODE_ENV') === 'development',
-      }),
-      inject: [ConfigService],
-    }),
-  ],
-  providers: [MailService],
-  exports: [MailService],
-})
-export class MailModule {}
+@Controller('mail')
+export class MailController {
+  constructor(
+    private readonly mailerService: MailerService,
+    private readonly configService: ConfigService,
+    
+  ) {}
+
+  @Get('test')
+  async testEmail() {
+    try {
+      await this.mailerService.sendMail({
+        to: 'test@example.com',
+        from: this.configService.get('MAIL_FROM'),
+        subject: 'Prueba de correo desde NestJS',
+        html: `
+          <h1>¡Funciona!</h1>
+          <p>Este correo fue enviado desde NestJS usando Mailtrap.</p>
+          <p><strong>Host:</strong> ${this.configService.get('MAILTRAP_HOST')}</p>
+        `,
+      });
+      return { 
+        success: true,
+        message: 'Correo de prueba enviado. Revisa tu inbox en Mailtrap.',
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: 'Error al enviar el correo',
+        error: error.message,
+      };
+    }
+  }
+}
