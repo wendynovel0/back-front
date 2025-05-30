@@ -104,16 +104,14 @@ export class AuthController {
     },
   })
   @ApiResponse({
-    status: HttpStatus.OK,
-    schema: {
-      example: {
-        expires_in: 3600,
-        access_token: 'tokenEjemplo',
-        user_id: 1,
-        email: 'usuario@ejemplo.com'
-      },
+  status: HttpStatus.OK,
+  schema: {
+    example: {
+      expires_in: 3600,
+      login_token: 'tokenEjemplo',
     },
-  })
+  },
+})
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'Credenciales inválidas',

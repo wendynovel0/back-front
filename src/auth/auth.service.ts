@@ -104,8 +104,6 @@ export class AuthService {
 
     return formatResponse([{
       access_token: token,
-      userId: user.user_id,
-      email: user.email
     }]);
   } catch (error) {
     console.error('Error en login:', error);
