@@ -12,7 +12,7 @@ export function applyDateRangeFilter<T extends ObjectLiteral>(
     throw new Error('Campo de fecha no válido');
   }
 
-  return qb.andWhere(`${alias}.${dateType} BETWEEN :startDate AND :endDate`, {
+  return qb.andWhere(`"${alias}"."${dateType}" BETWEEN :startDate AND :endDate`, {
     startDate,
     endDate,
   });
