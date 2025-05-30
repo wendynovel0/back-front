@@ -60,22 +60,18 @@ export class UserController {
   description: 'Permite buscar usuarios por email, estado activo y fechas de creación/actualización',
 })
 @ApiQuery({ name: 'email', required: false, description: 'Filtrar por email (búsqueda parcial)', example: 'ejemplo@correo.com' })
-@ApiQuery({ name: 'createdStartDate', required: false, description: 'Fecha inicial de creación (YYYY-MM-DD)', example: '2023-01-01' })
-@ApiQuery({ name: 'createdEndDate', required: false, description: 'Fecha final de creación (YYYY-MM-DD)', example: '2023-12-31' })
-@ApiQuery({ name: 'updatedStartDate', required: false, description: 'Fecha inicial de actualización (YYYY-MM-DD)', example: '2023-01-01' })
-@ApiQuery({ name: 'updatedEndDate', required: false, description: 'Fecha final de actualización (YYYY-MM-DD)', example: '2023-12-31' })
+@ApiQuery({ name: 'dateType', required: false, enum: ['created_at', 'updated_at', 'deleted_at'] })
+@ApiQuery({ name: 'startDate', required: false })
+@ApiQuery({ name: 'endDate', required: false })
 @ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true/false)', example: true })
 @ApiResponse({ status: 200, description: 'Lista de usuarios encontrados', type: [UsersView] })
 async findAllWithFilters(
-  @Query('email') email: string,
-  @Query('createdStartDate') createdStartDate: string,
-  @Query('createdEndDate') createdEndDate: string,
-  @Query('updatedStartDate') updatedStartDate: string,
-  @Query('updatedEndDate') updatedEndDate: string,
-  @Query('deletedStartDate') deletedStartDate: string,
-  @Query('deletedEndDate') deletedEndDate: string,
-  @Query('isActive') isActive: string,
-  @CurrentUser() user: any
+  @Query('email') email?: string,
+  @Query('dateType') dateType?: 'created_at' | 'updated_at' | 'deleted_at',
+  @Query('startDate') startDate?: string,
+  @Query('endDate') endDate?: string,
+  @Query('isActive') isActive?: string,
+  @CurrentUser() user?: any,
 ) {
   if (!user) {
     throw new UnauthorizedException('Token inválido o no proporcionado');
@@ -83,40 +79,28 @@ async findAllWithFilters(
 
   let dateFilter: Filters['dateFilter'] = undefined;
 
-  const filterSets = [
-    { type: 'created_at', start: createdStartDate, end: createdEndDate },
-    { type: 'updated_at', start: updatedStartDate, end: updatedEndDate },
-    { type: 'deleted_at', start: deletedStartDate, end: deletedEndDate },
-  ];
-
-  const usedFilters = filterSets.filter(f => f.start || f.end);
-
-  if (usedFilters.length > 1) {
-    throw new BadRequestException('Solo puede aplicar un tipo de filtro de fecha a la vez');
+  // Validaciones para filtro de fechas único
+  if ((dateType || startDate || endDate) && !(dateType && startDate && endDate)) {
+    throw new BadRequestException('Debe proporcionar dateType, startDate y endDate para filtrar por fecha');
   }
 
-  const activeFilter = usedFilters[0];
-  if (activeFilter) {
-    if (!activeFilter.start || !activeFilter.end) {
-      throw new BadRequestException(`Debe proporcionar ambas fechas para ${activeFilter.type}`);
-    }
+  if (dateType && startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
 
-    const start = new Date(activeFilter.start);
-    const end = new Date(activeFilter.end);
     if (start > end) {
-      throw new BadRequestException(`${activeFilter.type} startDate no puede ser mayor que endDate`);
+      throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha final');
     }
 
-    dateFilter = {
-      dateType: activeFilter.type as 'created_at' | 'updated_at' | 'deleted_at',
-      startDate: activeFilter.start,
-      endDate: activeFilter.end,
-    };
+    dateFilter = { dateType, startDate, endDate };
   }
 
+  // Convertir isActive string a boolean o undefined
   const isActiveLower = isActive?.toLowerCase();
   const isActiveBoolean =
-    isActiveLower === 'true' ? true : isActiveLower === 'false' ? false : undefined;
+    isActiveLower === 'true' ? true :
+    isActiveLower === 'false' ? false :
+    undefined;
 
   const filters: Filters = {
     email,
@@ -126,14 +110,13 @@ async findAllWithFilters(
 
   const records = await this.userService.findAllWithFilters(filters);
 
-  const filteredRecords = records.map(user => ({
+  return records.map(user => ({
     user_id: user.user_id,
     email: user.email,
     is_active: user.is_active,
   }));
-
-  return filteredRecords;
 }
+
 
 
  @Get(':id')
