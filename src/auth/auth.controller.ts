@@ -87,13 +87,13 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDto) {
   return this.authService.register(registerDto); 
 }
-
+/*
 @Get('confirm/:token')
 async confirmAccount(@Param('token') token: string) {
   await this.authService.confirmAccount(token);
   return 'Cuenta activada';
 }
-
+*/	
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Autenticación de usuario' })
