@@ -19,7 +19,7 @@ import { LogsModule } from 'src/action-logs/action-logs.module';
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
 
-    TypeOrmModule.forFeature([User, BlacklistedToken, LogsModule,]),
+    TypeOrmModule.forFeature([User, BlacklistedToken]),
       
     JwtModule.registerAsync({
       imports: [ConfigModule],
