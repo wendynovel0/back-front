@@ -18,9 +18,7 @@ import { User } from '../users/entities/user.entity';
 import { BlacklistedToken } from './entities/blacklisted-token.entity';
 import { MailService } from '../mail/mail.service';
 import { normalizeToken } from '../common/utils/token.utils';
-import { LogsModule } from 'src/action-logs/action-logs.module';
-
-
+import * as crypto from 'crypto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { formatResponse } from 'src/common/utils/response-format';
 import { ActionLogsService } from 'src/action-logs/action-logs.service';
@@ -30,15 +28,16 @@ export class AuthService {
   private readonly SALT_ROUNDS = 12;
 
   constructor(
-    @Inject(forwardRef(() => UserService))
-    private readonly usersService: UserService,
-    private readonly jwtService: JwtService,
-    private readonly mailService: MailService,
-    @InjectRepository(BlacklistedToken)
-    private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
-    private readonly actionLogsService: ActionLogsService,
-  ) {}
-
+  @Inject(forwardRef(() => UserService))
+  private readonly usersService: UserService,
+  private readonly jwtService: JwtService,
+  private readonly mailService: MailService,
+  @InjectRepository(BlacklistedToken)
+  private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
+  @Inject(forwardRef(() => ActionLogsService))
+  private readonly actionLogsService: ActionLogsService,
+) {}
+  
 
   async register(registerDto: RegisterDto): Promise<any> {
   const { email, password } = registerDto;
