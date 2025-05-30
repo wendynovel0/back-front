@@ -49,7 +49,7 @@ export class AuthController {
     }
 
     await this.authService.logout(token);
-    return formatResponse([{ message: 'Sesión cerrada correctamente' }]);
+    return { message: 'Sesión cerrada correctamente' };
   }
 
   @Post('register')
