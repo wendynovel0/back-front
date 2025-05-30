@@ -141,7 +141,7 @@ async logout(token: string): Promise<any> {
   await this.blacklistedTokenRepo.save({
     token: normalizedToken,
     expiresAt,
-    user,
+    user: { user_id: user.user_id },
   });
 
 

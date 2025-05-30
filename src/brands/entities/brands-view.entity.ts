@@ -21,6 +21,9 @@ export class BrandView {
   updated_at: Date;
 
   @ViewColumn()
+  deleted_at: Date | null;
+
+  @ViewColumn()
   supplier_id: number;
 
   @ViewColumn()

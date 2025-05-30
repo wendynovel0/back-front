@@ -8,7 +8,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-
+import { applyDateRangeFilter } from '../common/utils/query.utils';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ReplaceUserDto } from './dto/replace-user.dto';
@@ -17,6 +17,15 @@ import { UsersView } from './entities/users-view.entity';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 import { AuthService } from '../auth/auth.service'; // 👈 importa el AuthService
 
+interface Filters {
+  email?: string;
+  dateFilter?: {
+    dateType: 'created_at' | 'updated_at' | 'deleted_at';
+    startDate: string;
+    endDate: string;
+  };
+  is_active?: boolean;
+}
 @Injectable()
 export class UserService {
   constructor(
@@ -29,6 +38,7 @@ export class UserService {
     @Inject(forwardRef(() => AuthService)) 
     private authService: AuthService,
   ) {}
+
 
   async create(createUserDto: CreateUserDto): Promise<User> {
     const user = this.userRepository.create(createUserDto);
@@ -85,46 +95,53 @@ export class UserService {
 
 
 
-  async replace(
-    id: number,
-    replaceUserDto: ReplaceUserDto,
-    performedBy: number,
-    ip?: string,
-  ): Promise<User> {
-    const user = await this.findOne(id);
-    const oldValue = { ...user };
+ async replace(
+  id: number,
+  replaceUserDto: ReplaceUserDto,
+  performedBy: number,
+  ip?: string,
+): Promise<User> {
+  const user = await this.findOneActive(id);
+  const oldValue = { ...user };
 
-    if (!replaceUserDto.email || replaceUserDto.email.trim() === '') {
-      throw new BadRequestException('El email es obligatorio');
-    }
-
-    const updatedData = { ...replaceUserDto };
-
-    // Hasheo
-    if (replaceUserDto.password_hash) {
-      const saltRounds = 10;
-      updatedData.password_hash = await bcrypt.hash(replaceUserDto.password_hash, saltRounds);
-    }
-
-    const newUser = this.userRepository.create({
-      ...user,
-      ...updatedData,
-    });
-
-    const replacedUser = await this.userRepository.save(newUser);
-
-    await this.actionLogsService.logAction({
-      userId: performedBy,
-      actionType: 'UPDATE',
-      entityType: 'User',
-      entityId: replacedUser.user_id,
-      oldValue,
-      newValue: replacedUser,
-      ipAddress: ip,
-    });
-
-    return replacedUser;
+  if (!replaceUserDto.email || replaceUserDto.email.trim() === '') {
+    throw new BadRequestException('El email es obligatorio');
   }
+
+  // Copiamos los datos recibidos
+  const updatedData: Partial<User> = { ...replaceUserDto };
+
+  // Hasheo si hay password
+  if (replaceUserDto.password_hash) {
+    const saltRounds = 10;
+    updatedData.password_hash = await bcrypt.hash(replaceUserDto.password_hash, saltRounds);
+  }
+
+  if ('deleted_at' in updatedData) {
+    if (updatedData.deleted_at === null) {
+      updatedData.deleted_at = undefined;
+    }
+  }
+
+  const newUser = this.userRepository.create({
+    ...user,
+    ...updatedData,
+  });
+
+  const replacedUser = await this.userRepository.save(newUser);
+
+  await this.actionLogsService.logAction({
+    userId: performedBy,
+    actionType: 'UPDATE',
+    entityType: 'User',
+    entityId: replacedUser.user_id,
+    oldValue,
+    newValue: replacedUser,
+    ipAddress: ip,
+  });
+
+  return replacedUser;
+}
   
  async update(
   id: number,
@@ -186,6 +203,13 @@ export class UserService {
 
 }
 
+async findOneActive(user_id: number): Promise<User | null> {
+  return this.userRepository.findOne({
+    where: { user_id, is_active: true },
+  });
+}
+
+
   async findByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { email } });
   }
@@ -203,43 +227,42 @@ export class UserService {
   }
 }
 
-  async findAllWithFilters(filters: {
-  email?: string;
-  createdStartDate?: string;
-  createdEndDate?: string;
-  updatedStartDate?: string;
-  updatedEndDate?: string;
-  is_active?: boolean;
-}): Promise<UsersView[]> {
+  async findAllWithFilters(filters: Filters): Promise<UsersView[]> {
   const query = this.usersViewRepository.createQueryBuilder('user');
 
   if (filters.email) {
     query.andWhere('LOWER(user.email) LIKE LOWER(:email)', { email: `%${filters.email}%` });
   }
 
-  if (filters.createdStartDate && filters.createdEndDate) {
-    query.andWhere('user.created_at BETWEEN :start AND :end', {
-      start: filters.createdStartDate,
-      end: filters.createdEndDate,
-    });
-  } else if (filters.createdStartDate || filters.createdEndDate) {
-    throw new Error('Debe especificar ambas fechas para filtro por fecha de creación.');
+  if (filters.is_active !== undefined) {
+    query.andWhere('user.is_active = :isActive', { isActive: filters.is_active });
   }
 
-  if (filters.updatedStartDate && filters.updatedEndDate) {
-    query.andWhere('user.updated_at BETWEEN :startUpdated AND :endUpdated', {
-      startUpdated: filters.updatedStartDate,
-      endUpdated: filters.updatedEndDate,
-    });
-  } else if (filters.updatedStartDate || filters.updatedEndDate) {
-    throw new Error('Debe especificar ambas fechas para filtro por fecha de actualización.');
+  if (filters.dateFilter) {
+  const { dateType, startDate, endDate } = filters.dateFilter;
+
+  if (!startDate || !endDate) {
+    throw new Error('Debe especificar ambas fechas para el filtro de fechas.');
   }
 
-  return query
-  .orderBy('user.created_at', 'DESC')
-  .getMany();
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  const today = new Date();
+
+  if (start > end) {
+    throw new Error('La fecha de inicio no puede ser mayor que la fecha final.');
+  }
+
+  if (end > today) {
+    throw new Error('La fecha final no puede ser una fecha futura.');
+  }
+
+  // Llamada correcta a la función: (query, alias, columnName, startDate, endDate)
+  applyDateRangeFilter(query, 'user', { dateType, startDate, endDate });
 }
 
+  return query.orderBy('user.created_at', 'DESC').getMany();
+}
 
 //Para mail de activación
 async findByActivationToken(token: string): Promise<User | null> {

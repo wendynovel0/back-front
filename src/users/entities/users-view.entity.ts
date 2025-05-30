@@ -1,8 +1,6 @@
 import { ViewEntity, ViewColumn } from 'typeorm';
 
-@ViewEntity({
-  name: 'users_view',
-})
+@ViewEntity({ name: 'users_view' })
 export class UsersView {
   @ViewColumn()
   user_id: number;
@@ -18,4 +16,7 @@ export class UsersView {
 
   @ViewColumn()
   updated_at: Date;
+
+  @ViewColumn()
+  deleted_at: Date | null;
 }

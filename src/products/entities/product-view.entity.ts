@@ -27,6 +27,9 @@ export class ProductView {
   updated_at: Date;
 
   @ViewColumn()
+  deleted_at: Date | null;
+
+  @ViewColumn()
   brand_id: number;
 
   @ViewColumn()
