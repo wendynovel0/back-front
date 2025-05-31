@@ -1,4 +1,7 @@
 import { ViewEntity, ViewColumn } from 'typeorm';
+import { IsOptional, ValidateNested } from 'class-validator';
+import { DateRangeFilterDto } from '../../common/dto/date-range-filter.dto';
+import { Type } from 'class-transformer';
 
 @ViewEntity({ name: 'brands_view' })
 export class BrandView {
@@ -28,4 +31,9 @@ export class BrandView {
 
   @ViewColumn()
   supplier_name: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => DateRangeFilterDto)
+  dateFilter?: DateRangeFilterDto;
 }
