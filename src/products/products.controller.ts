@@ -78,7 +78,7 @@ async findOneFromView(@Param('id') id: string) {
   description: 'Permite buscar productos por texto, estado, proveedor, marca y fechas de creación/edición'
 })
 @ApiQuery({ name: 'search', required: false, description: 'Texto libre en código, nombre, descripción, marca o proveedor' })
-@ApiQuery({ name: 'dateType', required: false, enum: ['created_at', 'updated_at'] })
+@ApiQuery({ name: 'dateType', required: false, enum: ['created_at', 'updated_at', 'deleted_at'] })
 @ApiQuery({ name: 'startDate', required: false })
 @ApiQuery({ name: 'endDate', required: false })
 @ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true/false)' })
