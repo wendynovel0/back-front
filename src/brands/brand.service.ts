@@ -7,6 +7,8 @@ import { ActionLogsService } from '../action-logs/action-logs.service';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { UpdateBrandDto } from './dto/update-brand.dto';
 import { formatResponse } from '../common/utils/response-format';
+import { DateRangeFilterDto } from '../common/dto/date-range-filter.dto';
+import { applyDateRangeFilter } from '../common/utils/query.utils'; 
 
 @Injectable()
 export class BrandService {
@@ -139,71 +141,72 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
 }
 
 
-  async findAllWithFilters(filters: {
-  brandName?: string;
-  supplierId?: number;
+async findAllWithFilters(filters: {
+  search?: string;
   isActive?: boolean;
-  createdStartDate?: string;
-  createdEndDate?: string;
-  updatedStartDate?: string;
-  updatedEndDate?: string;
-}) {
+  supplierIds?: number[];
+  dateFilter?: DateRangeFilterDto;
+}): Promise<any> {
   const query = this.brandsViewRepository.createQueryBuilder('brand');
-  const now = new Date();
 
-  if (filters.brandName) {
-    query.andWhere('LOWER(brand.brand_name) LIKE LOWER(:brandName)', {
-      brandName: `%${filters.brandName}%`,
-    });
+  if (filters.search) {
+    query.andWhere(
+      `(
+        LOWER(brand.brand_name) LIKE LOWER(:search)
+        OR LOWER(brand.description) LIKE LOWER(:search)
+        OR LOWER(brand.supplier_name) LIKE LOWER(:search)
+      )`,
+      { search: `%${filters.search}%` }
+    );
   }
 
   if (filters.isActive !== undefined) {
-    query.andWhere('brand.brand_is_active = :isActive', {
-      isActive: filters.isActive,
+    query.andWhere('brand.brand_is_active = :isActive', { isActive: filters.isActive });
+  }
+
+  if (filters.supplierIds?.length) {
+    query.andWhere('brand.supplier_id IN (:...supplierIds)', {
+      supplierIds: filters.supplierIds,
     });
   }
 
-  if (filters.createdStartDate && !filters.createdEndDate) {
-    throw new BadRequestException('Debe proporcionar ambas fechas de creación.');
-  }
+  if (filters.dateFilter) {
+    const { dateType, startDate, endDate } = filters.dateFilter;
 
-  if (filters.updatedStartDate && !filters.updatedEndDate) {
-    throw new BadRequestException('Debe proporcionar ambas fechas de actualización.');
-  }
+    if (!startDate || !endDate) {
+      throw new BadRequestException('Debe especificar ambas fechas.');
+    }
 
-  if (filters.createdStartDate && filters.createdEndDate) {
-    const start = new Date(filters.createdStartDate);
-    const end = new Date(filters.createdEndDate);
-    if (start > end) throw new BadRequestException('Fecha de inicio de creación mayor a la de fin.');
-    if (start > now || end > now) throw new BadRequestException('Fechas futuras no permitidas en creación.');
-    query.andWhere('brand.created_at BETWEEN :start AND :end', { start, end });
-  }
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const today = new Date();
 
-  if (filters.updatedStartDate && filters.updatedEndDate) {
-    const start = new Date(filters.updatedStartDate);
-    const end = new Date(filters.updatedEndDate);
-    if (start > end) throw new BadRequestException('Fecha de inicio de actualización mayor a la de fin.');
-    if (start > now || end > now) throw new BadRequestException('Fechas futuras no permitidas en actualización.');
-    query.andWhere('brand.updated_at BETWEEN :start AND :end', { start, end });
-  }
+    if (start > end) {
+      throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha final.');
+    }
 
-  if (filters.supplierId) {
-    query.andWhere('brand.supplier_id = :supplierId', { supplierId: filters.supplierId });
+    if (end > today) {
+      throw new BadRequestException('La fecha final no puede ser futura.');
+    }
+
+    applyDateRangeFilter(query, 'brand', { dateType, startDate, endDate });
   }
 
   const brands = await query.orderBy('brand.created_at', 'DESC').getMany();
 
-  const filteredResponse = brands.map((brand) => ({
+  // Solo devolvemos lo necesario (sin timestamps)
+  const response = brands.map((brand) => ({
     brand_id: brand.brand_id,
     brand_name: brand.brand_name,
     description: brand.description,
     supplier_id: brand.supplier_id,
     supplier_name: brand.supplier_name,
-    // No se devuelven created_at ni updated_at
+    // No created_at ni updated_at
   }));
 
-  return formatResponse(filteredResponse);
+  return formatResponse(response);
 }
+
 // Método para obtener una vista mínima de la marca como nos dijo Russel
 async findOneMinimal(id: number) {
   return this.brandRepository.findOne({

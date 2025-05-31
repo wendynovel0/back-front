@@ -9,8 +9,8 @@ import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
 import { Brand } from '../brands/entities/brand.entity';
 import { ProductSearchDto } from './dto/product-search.dto';
-import { DateRangeFilterDto } from '../common/dto/date-range-filter.dto';
 import { ProductView } from './entities/product-view.entity';
+import { DateRangeFilterDto } from '../common/dto/date-range-filter.dto';
 import { applyDateRangeFilter } from '../common/utils/query.utils'; 
 
 
