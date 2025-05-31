@@ -87,7 +87,7 @@ async findOneFromView(@Param('id') id: string) {
 @ApiResponse({ status: 200, description: 'Lista de productos encontrados', type: [ProductView] })
 async findAllWithFilters(
   @Query('search') search?: string,
-  @Query('dateType') dateType?: 'created_at' | 'updated_at',
+  @Query('dateType') dateType?: 'created_at' | 'updated_at' | 'deleted_at',
   @Query('startDate') startDate?: string,
   @Query('endDate') endDate?: string,
   @Query('isActive') isActive?: string,
@@ -353,9 +353,7 @@ async activate(
   const updatedProduct = await this.productsService.activate(id, user);
 
   return {
-    success: true,
     message: 'Producto activado correctamente',
-    data: updatedProduct,
   };
 }
 
