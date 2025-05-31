@@ -11,6 +11,7 @@ import {
   UseGuards,
   UnauthorizedException,
   NotFoundException,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { CreateBrandDto } from './dto/create-brand.dto';
 import { BrandService } from './brand.service'; // Nombre corregido
@@ -37,15 +38,14 @@ import { BrandView } from './entities/brands-view.entity';
 export class BrandsController {
   constructor(private readonly brandsService: BrandService) {} // Nombre corregido
 
- @Get()
+@Get()
 @ApiOperation({ summary: 'Obtener marcas con filtros' })
-@ApiQuery({ name: 'brandName', required: false, type: String, description: 'Nombre de la marca (parcial o completo)' })
-@ApiQuery({ name: 'supplierId', required: false, type: Number, description: 'ID del proveedor' })
+@ApiQuery({ name: 'search', required: false, type: String, description: 'Texto a buscar en nombre, descripción o proveedor' })
+@ApiQuery({ name: 'supplierIds', required: false, type: String, description: 'IDs de proveedores separados por coma (ej: 1,2,3)' })
 @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Estado activo de la marca (true o false)' })
-@ApiQuery({ name: 'createdStartDate', required: false, type: String, description: 'Fecha inicial de creación (YYYY-MM-DD)' })
-@ApiQuery({ name: 'createdEndDate', required: false, type: String, description: 'Fecha final de creación (YYYY-MM-DD)' })
-@ApiQuery({ name: 'updatedStartDate', required: false, type: String, description: 'Fecha inicial de actualización (YYYY-MM-DD)' })
-@ApiQuery({ name: 'updatedEndDate', required: false, type: String, description: 'Fecha final de actualización (YYYY-MM-DD)' })
+@ApiQuery({ name: 'dateType', required: false, enum: ['created_at', 'updated_at', 'deleted_at'], description: 'Tipo de fecha a filtrar' })
+@ApiQuery({ name: 'startDate', required: false, type: String, description: 'Fecha inicial (YYYY-MM-DD)' })
+@ApiQuery({ name: 'endDate', required: false, type: String, description: 'Fecha final (YYYY-MM-DD)' })
 @ApiResponse({
   status: 200,
   description: 'Lista filtrada de marcas',
@@ -53,29 +53,39 @@ export class BrandsController {
 })
 @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
 async findAll(
-  @Query('brandName') brandName?: string,
-  @Query('supplierId') supplierId?: number,
+  @Query('search') search?: string,
+  @Query('supplierIds') supplierIdsRaw?: string,
   @Query('isActive') isActive?: boolean,
-  @Query('createdStartDate') createdStartDate?: string,
-  @Query('createdEndDate') createdEndDate?: string,
-  @Query('updatedStartDate') updatedStartDate?: string,
-  @Query('updatedEndDate') updatedEndDate?: string,
+  @Query('dateType') dateType?: 'created_at' | 'updated_at' | 'deleted_at',
+  @Query('startDate') startDate?: string,
+  @Query('endDate') endDate?: string,
   @CurrentUser() user?: User,
-): Promise<BrandView[]> {
+): Promise<any> {
   if (!user) {
     throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
 
+  const supplierIds = supplierIdsRaw
+    ? supplierIdsRaw
+        .split(',')
+        .map((id) => parseInt(id.trim(), 10))
+        .filter((id) => !isNaN(id))
+    : [];
+
+  const dateFilter =
+    dateType && startDate && endDate
+      ? { dateType, startDate, endDate }
+      : undefined;
+
+
   return this.brandsService.findAllWithFilters({
-    brandName,
-    supplierId,
+    search,
     isActive,
-    createdStartDate,
-    createdEndDate,
-    updatedStartDate,
-    updatedEndDate,
+    supplierIds,
+    dateFilter,
   });
 }
+
 
 
   // @Get('search')
