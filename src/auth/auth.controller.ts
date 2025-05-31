@@ -29,6 +29,7 @@ import {
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { formatResponse } from '../common/utils/response-format';
 import { ConfigService } from '@nestjs/config';
+import { MailService } from '../mail/mail.service';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -38,6 +39,7 @@ export class AuthController {
     private readonly userService: UserService,
     @Inject(ConfigService)
     private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
 
@@ -87,7 +89,29 @@ export class AuthController {
   async register(@Body() registerDto: RegisterDto) {
   return this.authService.register(registerDto); 
 }
-	
+
+	@Get('confirm/:token')
+async confirmAccount(
+  @Param('token') token: string,
+  @Res() res: Response,
+) {
+  try {
+
+    const userEmail = await this.authService.confirmAccount(token);
+
+
+    await this.mailService.sendActivationSuccessEmail(userEmail);
+
+
+    const frontendUrl = this.configService.get('FRONTEND_URL');
+    return res.redirect(`${frontendUrl}/activation-success?email=${encodeURIComponent(userEmail)}`);
+
+  } catch (error) {
+    const frontendUrl = this.configService.get('FRONTEND_URL');
+    return res.redirect(`${frontendUrl}/activation-error?message=${encodeURIComponent(error.message)}`);
+  }
+}
+
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Autenticación de usuario' })
