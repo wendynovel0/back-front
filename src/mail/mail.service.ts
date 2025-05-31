@@ -55,4 +55,17 @@ export class MailService {
       throw new Error('Error al enviar email de restablecimiento');
     }
   }
+  async sendActivationSuccessEmail(email: string): Promise<void> {
+  const frontendUrl = this.configService.get('FRONTEND_URL');
+
+  await this.mailerService.sendMail({
+    to: email,
+    subject: `¡Cuenta activada en Hoken`,
+    template: 'activation-success',
+    context: {
+      email,
+      frontendUrl,
+    },
+  });
+}
 } 
