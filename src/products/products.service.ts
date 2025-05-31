@@ -9,7 +9,10 @@ import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
 import { Brand } from '../brands/entities/brand.entity';
 import { ProductSearchDto } from './dto/product-search.dto';
+import { DateRangeFilterDto } from '../common/dto/date-range-filter.dto';
 import { ProductView } from './entities/product-view.entity';
+import { applyDateRangeFilter } from '../common/utils/query.utils'; 
+
 
 @Injectable()
 export class ProductsService {
@@ -77,92 +80,59 @@ export class ProductsService {
 //     });
 // }
 
- async findAll(filters: {
+async findAll(filters: {
   search?: string;
-  createdStartDate?: string;
-  createdEndDate?: string;
-  updatedStartDate?: string;
-  updatedEndDate?: string;
   isActive?: boolean;
   brandIds?: number[];
   supplierIds?: number[];
-}) {
+  dateFilter?: DateRangeFilterDto;
+}): Promise<ProductView[]> {
   const query = this.productViewRepository.createQueryBuilder('product');
-  const today = new Date();
 
-  // Validación y filtro por fecha de creación
-  if (filters.createdStartDate || filters.createdEndDate) {
-    if (!filters.createdStartDate || !filters.createdEndDate) {
-      throw new BadRequestException('Debe especificar tanto fecha de inicio como de fin para la búsqueda por creación.');
-    }
-
-    const createdStart = new Date(filters.createdStartDate);
-    const createdEnd = new Date(filters.createdEndDate);
-
-    if (createdStart > createdEnd) {
-      throw new BadRequestException('La fecha de inicio de creación no puede ser mayor que la fecha de fin.');
-    }
-
-    if (createdStart > today || createdEnd > today) {
-      throw new BadRequestException('No se puede buscar productos creados en el futuro.');
-    }
-
-    query.andWhere(`DATE(product.created_at) BETWEEN :createdStart AND :createdEnd`, {
-      createdStart: filters.createdStartDate,
-      createdEnd: filters.createdEndDate,
-    });
-  }
-
-  // Validación y filtro por fecha de actualización
-  if (filters.updatedStartDate || filters.updatedEndDate) {
-    if (!filters.updatedStartDate || !filters.updatedEndDate) {
-      throw new BadRequestException('Debe especificar tanto fecha de inicio como de fin para la búsqueda por edición.');
-    }
-
-    const updatedStart = new Date(filters.updatedStartDate);
-    const updatedEnd = new Date(filters.updatedEndDate);
-
-    if (updatedStart > updatedEnd) {
-      throw new BadRequestException('La fecha de inicio de edición no puede ser mayor que la fecha de fin.');
-    }
-
-    if (updatedStart > today || updatedEnd > today) {
-      throw new BadRequestException('No se puede buscar productos editados en el futuro.');
-    }
-
-    query.andWhere(`DATE(product.updated_at) BETWEEN :updatedStart AND :updatedEnd`, {
-      updatedStart: filters.updatedStartDate,
-      updatedEnd: filters.updatedEndDate,
-    });
-  }
-
-  // Búsqueda general
   if (filters.search) {
     query.andWhere(
-      `(product.code ILIKE :search OR product.product_name ILIKE :search OR product.description ILIKE :search OR product.brand_name ILIKE :search OR product.supplier_name ILIKE :search)`,
+      `("product"."code" ILIKE :search OR "product"."product_name" ILIKE :search OR "product"."description" ILIKE :search OR "product"."brand_name" ILIKE :search OR "product"."supplier_name" ILIKE :search)`,
       { search: `%${filters.search}%` }
     );
   }
 
-  // Filtro por estado
   if (filters.isActive !== undefined) {
-    query.andWhere(`product.product_is_active = :isActive`, { isActive: filters.isActive });
+    query.andWhere('product.product_is_active = :isActive', { isActive: filters.isActive });
   }
 
-  // Filtro por marcas
   if (filters.brandIds?.length) {
     query.andWhere('product.brand_id IN (:...brandIds)', { brandIds: filters.brandIds });
   }
 
-  // Filtro por proveedores
   if (filters.supplierIds?.length) {
     query.andWhere('product.supplier_id IN (:...supplierIds)', { supplierIds: filters.supplierIds });
   }
 
-  return query
-  .orderBy('product.created_at', 'DESC')
-  .getMany();
+  if (filters.dateFilter) {
+    const { dateType, startDate, endDate } = filters.dateFilter;
+
+    if (!startDate || !endDate) {
+      throw new Error('Debe especificar ambas fechas para el filtro de fechas.');
+    }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const today = new Date();
+
+    if (start > end) {
+      throw new Error('La fecha de inicio no puede ser mayor que la fecha final.');
+    }
+
+    if (end > today) {
+      throw new Error('La fecha final no puede ser una fecha futura.');
+    }
+
+    applyDateRangeFilter(query, 'product', { dateType, startDate, endDate });
+  }
+
+  return query.orderBy(`"product"."created_at"`, 'DESC').getMany();
 }
+
 
   async findOne(id: number): Promise<Product> {
     const product = await this.productRepository.findOne({ 

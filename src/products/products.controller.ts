@@ -12,6 +12,9 @@ import { ApiOkResponse, ApiNotFoundResponse } from '@nestjs/swagger';
 import { ProductView } from './entities/product-view.entity';
 import { plainToInstance } from 'class-transformer';
 import { ProductSwaggerDto } from './dto/product-swagger.dto';
+import { Filters } from '../common/interfaces/filters.interface';
+import { DateRangeFilterDto } from '../common/dto/date-range-filter.dto';
+
 
 @ApiTags('Productos')
 @ApiBearerAuth()
@@ -70,143 +73,67 @@ async findOneFromView(@Param('id') id: string) {
 }
 
 @Get()
-@ApiOperation({ 
+@ApiOperation({
   summary: 'Buscar productos con filtros combinados',
-  description: 'Permite buscar productos por múltiples criterios. Todos los parámetros son opcionales.'
+  description: 'Permite buscar productos por texto, estado, proveedor, marca y fechas de creación/edición'
 })
-@ApiQuery({ 
-  name: 'search', 
-  required: false, 
-  description: 'Texto para buscar en código, nombre o descripción de producto o nombre de marca o proveedor',
-  example: 'iPhone'
-})
-@ApiQuery({ 
-  name: 'createdStartDate', 
-  required: false,  
-  description: 'Fecha inicial de creación (formato YYYY-MM-DD)',
-  example: '2023-01-01'
-})
-@ApiQuery({ 
-  name: 'createdEndDate', 
-  required: false, 
-  description: 'Fecha final de creación (formato YYYY-MM-DD)',
-  example: '2023-12-31'
-})
-@ApiQuery({ 
-  name: 'updatedStartDate', 
-  required: false, 
-  description: 'Fecha inicial de actualización (formato YYYY-MM-DD)',
-  example: '2023-01-01'
-})
-@ApiQuery({ 
-  name: 'updatedEndDate', 
-  required: false, 
-  description: 'Fecha final de actualización (formato YYYY-MM-DD)',
-  example: '2023-12-31'
-})
-@ApiQuery({ 
-  name: 'isActive', 
-  required: false, 
-  description: 'Filtrar por estado activo (true) o inactivo (false)',
-  example: true
-})
-@ApiQuery({ 
-  name: 'brandIds', 
-  required: false, 
-  description: 'IDs de marcas separados por comas',
-  example: '1,2,3'
-})
-@ApiQuery({ 
-  name: 'supplierIds', 
-  required: false, 
-  description: 'IDs de proveedores separados por comas',
-  example: '5,9'
-})
-@ApiResponse({
-  status: 200,
-  description: 'Lista de productos encontrados',
-  type: [Product]
-})
-@ApiResponse({ 
-  status: 401, 
-  description: 'No autorizado - Token inválido o no proporcionado'
-})
-async findAll(
-  @Query('search') search: string,
-  @Query('createdStartDate') createdStartDate: string,
-  @Query('createdEndDate') createdEndDate: string,
-  @Query('updatedStartDate') updatedStartDate: string,
-  @Query('updatedEndDate') updatedEndDate: string,
-  @Query('isActive') isActive: string,
-  @Query('brandIds') brandIds: string,
-  @Query('supplierIds') supplierIds: string,
-  @CurrentUser() user: User
+@ApiQuery({ name: 'search', required: false, description: 'Texto libre en código, nombre, descripción, marca o proveedor' })
+@ApiQuery({ name: 'dateType', required: false, enum: ['created_at', 'updated_at'] })
+@ApiQuery({ name: 'startDate', required: false })
+@ApiQuery({ name: 'endDate', required: false })
+@ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true/false)' })
+@ApiQuery({ name: 'brandIds', required: false, description: 'IDs de marcas separados por coma' })
+@ApiQuery({ name: 'supplierIds', required: false, description: 'IDs de proveedores separados por coma' })
+@ApiResponse({ status: 200, description: 'Lista de productos encontrados', type: [ProductView] })
+async findAllWithFilters(
+  @Query('search') search?: string,
+  @Query('dateType') dateType?: 'created_at' | 'updated_at',
+  @Query('startDate') startDate?: string,
+  @Query('endDate') endDate?: string,
+  @Query('isActive') isActive?: string,
+  @Query('brandIds') brandIds?: string,
+  @Query('supplierIds') supplierIds?: string,
+  @CurrentUser() user?: any,
 ) {
   if (!user) {
     throw new UnauthorizedException('Token inválido o no proporcionado');
   }
 
-  const now = new Date();
+  let dateFilter: DateRangeFilterDto | undefined = undefined;
 
-  // Validación fechas de creación
-  if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
-    throw new BadRequestException('Debe proporcionar ambas fechas de creación: createdStartDate y createdEndDate');
+  if ((dateType || startDate || endDate) && !(dateType && startDate && endDate)) {
+    throw new BadRequestException('Debe proporcionar dateType, startDate y endDate para filtrar por fecha');
   }
-  if (createdStartDate && createdEndDate) {
-    const start = new Date(createdStartDate);
-    const end = new Date(createdEndDate);
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new BadRequestException('Fechas de creación inválidas, formato esperado YYYY-MM-DD');
-    }
+  if (dateType && startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
     if (start > end) {
-      throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
+      throw new BadRequestException('La fecha de inicio no puede ser mayor que la fecha final');
     }
-    if (end > now) {
-      throw new BadRequestException('createdEndDate no puede ser una fecha futura');
-    }
+
+    dateFilter = { dateType, startDate, endDate };
   }
 
-  // Validación fechas de actualización
-  if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
-    throw new BadRequestException('Debe proporcionar ambas fechas de actualización: updatedStartDate y updatedEndDate');
-  }
-  if (updatedStartDate && updatedEndDate) {
-    const start = new Date(updatedStartDate);
-    const end = new Date(updatedEndDate);
+  const isActiveLower = isActive?.toLowerCase();
+  const isActiveBoolean =
+    isActiveLower === 'true' ? true :
+    isActiveLower === 'false' ? false :
+    undefined;
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new BadRequestException('Fechas de actualización inválidas, formato esperado YYYY-MM-DD');
-    }
-    if (start > end) {
-      throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
-    }
-    if (end > now) {
-      throw new BadRequestException('updatedEndDate no puede ser una fecha futura');
-    }
-  }
+  const brandIdsArray = brandIds?.split(',').map(id => parseInt(id.trim())).filter(Boolean) || undefined;
+  const supplierIdsArray = supplierIds?.split(',').map(id => parseInt(id.trim())).filter(Boolean) || undefined;
 
-  const brandIdsArray = brandIds ? brandIds.split(',').map(id => parseInt(id.trim())) : undefined;
-  const supplierIdsArray = supplierIds ? supplierIds.split(',').map(id => parseInt(id.trim())) : undefined;
-
-  const isActiveBoolean = typeof isActive === 'string'
-    ? isActive.toLowerCase() === 'true'
-      ? true
-      : isActive.toLowerCase() === 'false'
-        ? false
-        : undefined
-    : undefined;
-
-  return this.productsService.findAll({
+  const filters = {
     search,
-    createdStartDate,
-    createdEndDate,
-    updatedStartDate,
-    updatedEndDate,
     isActive: isActiveBoolean,
     brandIds: brandIdsArray,
-    supplierIds: supplierIdsArray
-  });
+    supplierIds: supplierIdsArray,
+    dateFilter,
+  };
+
+  return this.productsService.findAll(filters);
 }
 
   @Post()
