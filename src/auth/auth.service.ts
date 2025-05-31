@@ -5,7 +5,8 @@ import {
   InternalServerErrorException,
   Inject,
   forwardRef,
-  ForbiddenException
+  ForbiddenException,
+  BadRequestException
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -22,6 +23,7 @@ import * as crypto from 'crypto';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { formatResponse } from 'src/common/utils/response-format';
 import { ActionLogsService } from 'src/action-logs/action-logs.service';
+import { ConfigService } from '@nestjs/config';
 
 
 @Injectable()
@@ -37,6 +39,7 @@ export class AuthService {
   private readonly blacklistedTokenRepo: Repository<BlacklistedToken>,
   @Inject(forwardRef(() => ActionLogsService))
   private readonly actionLogsService: ActionLogsService,
+  private readonly configService: ConfigService, 
 ) {}
   
 
@@ -201,9 +204,22 @@ async isBlacklisted(token: string): Promise<boolean> {
   }
 }
 
-async confirmAccount(token: string): Promise<{ message: string }> {
-  await this.usersService.activateUserByToken(token);   
-  return { message: 'Cuenta activada exitosamente' };
+async confirmAccount(token: string): Promise<string> {
+  try {
+    
+    const decoded = this.jwtService.verify(token, {
+      secret: this.configService.get('JWT_ACTIVATION_SECRET'),
+    });
+
+    await this.usersService.activateUserByToken(token);
+    return decoded.email; 
+
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      throw new BadRequestException('El token de activación ha expirado');
+    }
+    throw new BadRequestException('Token de activación inválido');
+  }
 }
 
   private async validateUser(email: string, password: string): Promise<User> {
