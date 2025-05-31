@@ -2,7 +2,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { Brand } from '../../brands/entities/brand.entity';
 
-@Entity({ name: 'products' }) // Especifica el nombre de la tabla
+@Entity({ name: 'products' })
 export class Product {
   @PrimaryGeneratedColumn({ name: 'product_id' })
   id: number;
@@ -31,4 +31,7 @@ export class Product {
 
   @Column({ name: 'updated_at', type: 'date', default: () => 'CURRENT_DATE' })
   updatedAt: Date;
+
+  @Column({ name: 'deleted_at', type: 'date', nullable: true })
+  deletedAt?: Date | null; 
 }
