@@ -257,14 +257,12 @@ async findOneActive(user_id: number): Promise<User | null> {
     throw new Error('La fecha final no puede ser una fecha futura.');
   }
 
-  // Llamada correcta a la función: (query, alias, columnName, startDate, endDate)
   applyDateRangeFilter(query, 'user', { dateType, startDate, endDate });
 }
 
   return query.orderBy(`"user"."created_at"`, 'DESC').getMany();
 }
 
-//Para mail de activación
 async findByActivationToken(token: string): Promise<User | null> {
     return this.userRepository.findOne({ where: { activation_token: token } });
   }
