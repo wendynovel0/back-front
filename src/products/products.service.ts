@@ -208,50 +208,44 @@ async findAll(filters: {
     }
   }
 
-  async deactivate(id: number, user: User): Promise<Product> {
-    const product = await this.findOne(id);
-    product.isActive = false;
-    product.updatedAt = new Date();
-    
-    await this.actionLogsService.logAction({
-      userId: user.user_id,
-      actionType: 'DEACTIVATE',
-      entityType: 'Product',
-      entityId: product.id,
-      oldValue: { isActive: true },
-      newValue: { isActive: false },
-    });
+async deactivate(id: number, user: User): Promise<Product> {
+  const product = await this.findOne(id);
 
-    return this.productRepository.save(product);
-  }
+  product.isActive = false;
+  product.deletedAt = new Date(); 
 
-  async activate(id: number, user: User): Promise<Product> {
-    const product = await this.findOne(id);
-    product.isActive = true;
-    product.updatedAt = new Date();
-    
-    await this.actionLogsService.logAction({
-      userId: user.user_id,
-      actionType: 'ACTIVATE',
-      entityType: 'Product',
-      entityId: product.id,
-      oldValue: { isActive: false },
-      newValue: { isActive: true },
-    });
+  await this.actionLogsService.logAction({
+    userId: user.user_id,
+    actionType: 'DEACTIVATE',
+    entityType: 'Product',
+    entityId: product.id,
+    oldValue: { isActive: true },
+    newValue: { isActive: false, deletedAt: product.deletedAt }, 
+  });
 
-    return this.productRepository.save(product);
-  }
-   async findOneFromView(productId: number): Promise<ProductView> {
-    const product = await this.productViewRepository.findOne({
-      where: { product_id: productId },
-    });
+  return this.productRepository.save(product);
+}
 
-    if (!product) {
-      throw new NotFoundException(`Producto con ID ${productId} no encontrado`);
-    }
 
-    return product;
-  }
+async activate(id: number, user: User): Promise<Product> {
+  const product = await this.findOne(id);
+
+  product.isActive = true;
+  product.updatedAt = new Date();
+  product.deletedAt = null; 
+
+  await this.actionLogsService.logAction({
+    userId: user.user_id,
+    actionType: 'ACTIVATE',
+    entityType: 'Product',
+    entityId: product.id,
+    oldValue: { isActive: false },
+    newValue: { isActive: true },
+  });
+
+  return this.productRepository.save(product);
+}
+
   async findOneMinimal(id: number) {
   return this.productViewRepository.findOne({
     where: { product_id: id },

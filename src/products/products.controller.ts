@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Patch, Delete, Query, UseGuards, UnauthorizedException, BadRequestException, NotFoundException } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -342,6 +342,23 @@ async findAllWithFilters(
     }
     return this.productsService.update(+id, updateProductDto, user);
   }
+
+  @Patch(':id/activate')
+@ApiOperation({ summary: 'Activar un producto' })
+@ApiResponse({ status: 200, description: 'Producto activado correctamente' })
+async activate(
+  @Param('id') id: number,
+  @CurrentUser() user: User,
+) {
+  const updatedProduct = await this.productsService.activate(id, user);
+
+  return {
+    success: true,
+    message: 'Producto activado correctamente',
+    data: updatedProduct,
+  };
+}
+
 
   @Delete(':id')
   @ApiOperation({ 
