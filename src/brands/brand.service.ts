@@ -194,7 +194,6 @@ async findAllWithFilters(filters: {
 
   const brands = await query.orderBy('brand.created_at', 'DESC').getMany();
 
-  // Solo devolvemos lo necesario (sin timestamps)
   const response = brands.map((brand) => ({
     brand_id: brand.brand_id,
     brand_name: brand.brand_name,
@@ -204,7 +203,7 @@ async findAllWithFilters(filters: {
     // No created_at ni updated_at
   }));
 
-  return formatResponse(response);
+  return response;
 }
 
 // Método para obtener una vista mínima de la marca como nos dijo Russel
