@@ -140,6 +140,7 @@ async findAllWithFilters(
     name: product.product_name,
     code: product.code,
     price: product.price,
+    description: product.description,
     brand_name: product.brand_name,
   }));
 }
