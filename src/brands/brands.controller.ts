@@ -41,7 +41,7 @@ export class BrandsController {
 @Get()
 @ApiOperation({ summary: 'Obtener marcas con filtros' })
 @ApiQuery({ name: 'search', required: false, type: String, description: 'Texto a buscar en nombre, descripción o proveedor' })
-@ApiQuery({ name: 'supplierId', required: false, type: Number, description: 'ID del proveedor (solo uno)' })
+@ApiQuery({ name: 'supplierIds', required: false, type: String, description: 'IDs de proveedores separados por coma (ej: 1,2,3)' })
 @ApiQuery({ name: 'isActive', required: false, type: Boolean, description: 'Estado activo de la marca (true o false)' })
 @ApiQuery({ name: 'dateType', required: false, enum: ['created_at', 'updated_at', 'deleted_at'], description: 'Tipo de fecha a filtrar' })
 @ApiQuery({ name: 'startDate', required: false, type: String, description: 'Fecha inicial (YYYY-MM-DD)' })
@@ -54,7 +54,7 @@ export class BrandsController {
 @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
 async findAll(
   @Query('search') search?: string,
-  @Query('supplierId', ParseIntPipe) supplierId?: number,
+  @Query('supplierIds') supplierIdsRaw?: string,
   @Query('isActive') isActive?: boolean,
   @Query('dateType') dateType?: 'created_at' | 'updated_at' | 'deleted_at',
   @Query('startDate') startDate?: string,
@@ -65,12 +65,18 @@ async findAll(
     throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
 
+  const supplierIds = supplierIdsRaw
+    ? supplierIdsRaw
+        .split(',')
+        .map((id) => parseInt(id.trim(), 10))
+        .filter((id) => !isNaN(id))
+    : [];
+
   const dateFilter =
     dateType && startDate && endDate
       ? { dateType, startDate, endDate }
       : undefined;
 
-  const supplierIds = supplierId ? [supplierId] : undefined;
 
   return this.brandsService.findAllWithFilters({
     search,
