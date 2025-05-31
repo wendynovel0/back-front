@@ -133,7 +133,15 @@ async findAllWithFilters(
     dateFilter,
   };
 
-  return this.productsService.findAll(filters);
+  const records = await this.productsService.findAll(filters);
+
+  return records.map(product => ({
+    product_id: product.product_id,
+    name: product.product_name,
+    code: product.code,
+    price: product.price,
+    brand_name: product.brand_name,
+  }));
 }
 
   @Post()
