@@ -32,6 +32,7 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 import { formatResponse } from '../common/utils/response-format';
 import { ConfigService } from '@nestjs/config';
 import { MailService } from '../mail/mail.service';
+import { RecaptchaGuard } from 'src/recaptcha/recaptcha.guard';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -64,6 +65,7 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @UseGuards(RecaptchaGuard)
   @ApiOperation({ summary: 'Registrar nuevo usuario (envía correo de confirmación)' }) 
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
@@ -119,6 +121,7 @@ async confirmAccount(
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(RecaptchaGuard)
   @ApiOperation({ summary: 'Autenticación de usuario' })
   @ApiBody({
     type: LoginDto,

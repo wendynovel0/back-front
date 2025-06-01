@@ -24,6 +24,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nes
 import { formatResponse } from 'src/common/utils/response-format';
 import { ActionLogsService } from 'src/action-logs/action-logs.service';
 import { ConfigService } from '@nestjs/config';
+import { RecaptchaService } from 'src/recaptcha/recaptcha.service';
 
 
 @Injectable()
@@ -40,11 +41,16 @@ export class AuthService {
   @Inject(forwardRef(() => ActionLogsService))
   private readonly actionLogsService: ActionLogsService,
   private readonly configService: ConfigService, 
+      private readonly recaptchaService: RecaptchaService, 
+
 ) {}
   
 
   async register(registerDto: RegisterDto): Promise<any> {
-  const { email, password } = registerDto;
+  const { email, password, recaptchaToken } = registerDto;
+
+  // Validar reCAPTCHA
+  await this.recaptchaService.verify(recaptchaToken);
 
   if (!email || !password) {
     throw new UnauthorizedException('Se requieren email y contraseña');
@@ -64,13 +70,14 @@ export class AuthService {
   try {
     const hashedPassword = await this.hashPassword(password);
 
-   const activationToken = this.jwtService.sign(
-    { email: normalizedEmail },
-    { 
-      secret: this.configService.get('JWT_ACTIVATION_SECRET'),
-      expiresIn: '24h' 
-    }
-  );
+    const activationToken = this.jwtService.sign(
+      { email: normalizedEmail },
+      {
+        secret: this.configService.get('JWT_ACTIVATION_SECRET'),
+        expiresIn: '24h',
+      },
+    );
+
     await this.usersService.create({
       email: normalizedEmail,
       password_hash: hashedPassword,
@@ -90,11 +97,14 @@ export class AuthService {
   }
 }
 
-
   async login(loginDto: LoginDto): Promise<any> {
+  const { email, password, recaptchaToken } = loginDto;
+
+  await this.recaptchaService.verify(recaptchaToken);
+
   try {
-    const normalizedEmail = loginDto.email.toLowerCase().trim();
-    const user = await this.validateUser(normalizedEmail, loginDto.password);
+    const normalizedEmail = email.toLowerCase().trim();
+    const user = await this.validateUser(normalizedEmail, password);
 
     const payload = {
       sub: user.user_id,
@@ -104,7 +114,7 @@ export class AuthService {
 
     const token = this.jwtService.sign(payload);
     const expiresIn = 3600; // 1 hora
-    
+
     await this.actionLogsService.logAction({
       userId: user.user_id,
       actionType: 'SESSION_LOGIN',
@@ -113,16 +123,14 @@ export class AuthService {
     });
 
     return {
-  expires_in: expiresIn,
-  login_token: token
-};
-
+      expires_in: expiresIn,
+      login_token: token,
+    };
   } catch (error) {
     console.error('Error en login:', error);
 
-
     await this.actionLogsService.logAction({
-      userId: -1, 
+      userId: -1,
       actionType: 'SESSION_LOGIN_FAILED',
       entityType: 'user',
     });
@@ -130,6 +138,7 @@ export class AuthService {
     throw new UnauthorizedException('Email o contraseña incorrectos');
   }
 }
+
 
 async logout(token: string): Promise<any> {
   const normalizedToken = normalizeToken(token);

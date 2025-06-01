@@ -19,4 +19,7 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty()
   password: string;
+
+  @IsNotEmpty()
+  recaptchaToken: string;
 }
