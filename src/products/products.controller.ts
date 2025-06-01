@@ -244,204 +244,95 @@ async findAllWithFilters(
   }
 
   @Put(':id')
-  @ApiOperation({ 
-    summary: 'Actualizar producto completamente',
-    description: 'Reemplaza todos los campos del producto. Para actualización parcial use PATCH.'
-  })
-  @ApiParam({ 
-    name: 'id', 
-    type: Number,
-    description: 'ID del producto a actualizar',
-    example: 1
-  })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Producto actualizado exitosamente',
-    type: Product,
-    examples: {
-      'Producto actualizado': {
-        summary: 'Ejemplo de producto actualizado',
-        value: {
-          product_id: 1,
-          code: "IP13-128-NEW",
-          name: "iPhone 13 128GB (2023 Edition)",
-          description: "Smartphone con chip A15 Bionic y nueva cámara",
-          price: 18999,
-          brand_id: 1,
-          is_active: true,
-          created_at: "2023-01-01",
-          updated_at: "2023-07-15",
-          brand: {
-            brand_id: 1,
-            name: "Apple",
-            description: "Empresa líder en tecnología",
-            is_active: true,
-            created_at: "2023-01-01",
-            updated_at: "2023-01-01"
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Datos inválidos',
-    examples: {
-      'Datos inválidos': {
-        summary: 'Error de validación',
-        value: {
-          statusCode: 400,
-          message: [
-            'price must be a positive number'
-          ],
-          error: 'Bad Request'
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'No autorizado',
-    examples: {
-      'Token inválido': {
-        summary: 'Error de autenticación',
-        value: {
-          statusCode: 401,
-          message: 'Token inválido o no proporcionado',
-          error: 'Unauthorized'
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Producto no encontrado',
-    examples: {
-      'Producto no existe': {
-        summary: 'Producto no encontrado',
-        value: {
-          statusCode: 404,
-          message: 'Producto no encontrado',
-          error: 'Not Found'
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 409, 
-    description: 'El código de producto ya existe',
-    examples: {
-      'Código duplicado': {
-        summary: 'Conflicto de código',
-        value: {
-          statusCode: 409,
-          message: 'El código de producto ya existe',
-          error: 'Conflict'
-        }
-      }
-    }
-  })
-  async update(
-    @Param('id') id: string,
-    @Body() updateProductDto: UpdateProductDto,
-    @CurrentUser() user: User
-  ) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o no proporcionado');
-    }
-    return this.productsService.update(+id, updateProductDto, user);
+@ApiOperation({ 
+  summary: 'Actualizar producto completamente',
+  description: 'Reemplaza todos los campos del producto. Para actualización parcial use PATCH.'
+})
+@ApiParam({ 
+  name: 'id', 
+  type: Number,
+  description: 'ID del producto a actualizar',
+  example: 1
+})
+@ApiResponse({ 
+  status: 200, 
+  description: 'Producto actualizado exitosamente',
+  schema: {
+    example: { message: 'Producto actualizado exitosamente' },
   }
+})
+@ApiResponse({ status: 400, description: 'Datos inválidos' })
+@ApiResponse({ status: 401, description: 'No autorizado' })
+@ApiResponse({ status: 404, description: 'Producto no encontrado' })
+@ApiResponse({ status: 409, description: 'El código de producto ya existe' })
+async update(
+  @Param('id') id: string,
+  @Body() updateProductDto: UpdateProductDto,
+  @CurrentUser() user: User
+) {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o no proporcionado');
+  }
+  await this.productsService.update(+id, updateProductDto, user);
+  return { message: 'Producto actualizado exitosamente' };
+}
 
   @Patch(':id/activate')
 @ApiOperation({ summary: 'Activar un producto' })
-@ApiResponse({ status: 200, description: 'Producto activado correctamente' })
+@ApiResponse({
+  status: 200,
+  description: 'Producto activado correctamente',
+  schema: {
+    example: { message: 'Producto activado correctamente' },
+  },
+})
+@ApiResponse({ status: 401, description: 'No autorizado' })
+@ApiResponse({ status: 404, description: 'Producto no encontrado' })
 async activate(
   @Param('id') id: number,
   @CurrentUser() user: User,
 ) {
-  const updatedProduct = await this.productsService.activate(id, user);
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o no proporcionado');
+  }
 
+  await this.productsService.activate(id, user);
   return {
     message: 'Producto activado correctamente',
   };
 }
 
 
-  @Delete(':id')
-  @ApiOperation({ 
-    summary: 'Desactivar producto (eliminación lógica)',
-    description: 'Desactiva un producto cambiando su estado is_active a false'
-  })
-  @ApiParam({ 
-    name: 'id', 
-    type: Number,
-    description: 'ID del producto a desactivar',
-    example: 1
-  })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Producto desactivado exitosamente',
-    type: Product,
-    examples: {
-      'Producto desactivado': {
-        summary: 'Ejemplo de producto desactivado',
-        value: {
-          product_id: 1,
-          code: "IP13-128",
-          name: "iPhone 13 128GB",
-          description: "Smartphone con chip A15 Bionic",
-          price: 17999,
-          brand_id: 1,
-          is_active: false,
-          created_at: "2023-01-01",
-          updated_at: "2023-07-15",
-          brand: {
-            brand_id: 1,
-            name: "Apple",
-            description: "Empresa líder en tecnología",
-            is_active: true,
-            created_at: "2023-01-01",
-            updated_at: "2023-01-01"
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 401, 
-    description: 'No autorizado',
-    examples: {
-      'Token inválido': {
-        summary: 'Error de autenticación',
-        value: {
-          statusCode: 401,
-          message: 'Token inválido o no proporcionado',
-          error: 'Unauthorized'
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Producto no encontrado',
-    examples: {
-      'Producto no existe': {
-        summary: 'Producto no encontrado',
-        value: {
-          statusCode: 404,
-          message: 'Producto no encontrado',
-          error: 'Not Found'
-        }
-      }
-    }
-  })
-  async remove(
-    @Param('id') id: string,
-    @CurrentUser() user: User
-  ) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o no proporcionado');
-    }
-    return this.productsService.deactivate(+id, user);
+@Delete(':id')
+@ApiOperation({ 
+  summary: 'Desactivar producto (eliminación lógica)',
+  description: 'Desactiva un producto cambiando su estado is_active a false'
+})
+@ApiParam({ 
+  name: 'id', 
+  type: Number,
+  description: 'ID del producto a desactivar',
+  example: 1
+})
+@ApiResponse({ 
+  status: 200,
+  description: 'Producto desactivado exitosamente',
+  schema: {
+    example: { message: 'Producto desactivado exitosamente' },
+  },
+})
+@ApiResponse({ status: 401, description: 'No autorizado' })
+@ApiResponse({ status: 404, description: 'Producto no encontrado' })
+async remove(
+  @Param('id') id: string,
+  @CurrentUser() user: User
+) {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o no proporcionado');
   }
+
+  await this.productsService.deactivate(+id, user);
+  return { message: 'Producto desactivado exitosamente' };
+}
+
 }
