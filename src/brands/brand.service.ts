@@ -74,19 +74,24 @@ export class BrandService {
   }
 
   async remove(id: number, performedBy: number, ip?: string): Promise<void> {
-    const brand = await this.findOne(id);
+  const brand = await this.findOne(id);
 
-    await this.actionLogsService.logAction({
-      userId: performedBy,
-      actionType: 'DELETE',
-      entityType: 'brand',
-      entityId: brand.id,
-      oldValue: brand,
-      ipAddress: ip,
-    });
+  // Actualizar estado en vez de eliminar
+  brand.isActive = false;
+  brand.deletedAt = new Date();
 
-    await this.brandRepository.remove(brand);
-  }
+  await this.actionLogsService.logAction({
+    userId: performedBy,
+    actionType: 'DELETE',
+    entityType: 'brand',
+    entityId: brand.id,
+    oldValue: brand,
+    ipAddress: ip,
+  });
+
+  await this.brandRepository.save(brand);
+}
+
 
   async deactivate(id: number, performedBy: number, ip?: string): Promise<Brand> {
   const brand = await this.findOne(id);
