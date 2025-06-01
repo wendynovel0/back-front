@@ -29,18 +29,21 @@
         .content {
             padding: 30px;
         }
+        .button-container {
+            text-align: center;
+            margin: 25px 0;
+        }
         .button {
             display: inline-block;
             background-color: #2A3E4C;
             color: #00AEEF;
-            text-decoration: none;
             padding: 12px 24px;
             border-radius: 5px;
             font-weight: bold;
-            margin: 20px 0;
             cursor: pointer;
             border: none;
-            transition: all 0.3s ease;
+            transition: background-color 0.3s;
+            position: relative;
         }
         .button:hover {
             background-color: #1E2B37;
@@ -49,39 +52,42 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
-        .footer {
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #777777;
-            background-color: #f9f9f9;
-        }
-        .success-message {
-            color: #4CAF50;
-            display: none;
-            margin-top: 20px;
-            font-weight: bold;
-        }
-        .error-message {
-            color: #f44336;
-            display: none;
-            margin-top: 20px;
-            font-weight: bold;
-        }
         .loader {
-            border: 3px solid #f3f3f3;
+            border: 3px solid rgba(255, 255, 255, 0.3);
             border-top: 3px solid #00AEEF;
             border-radius: 50%;
             width: 20px;
             height: 20px;
             animation: spin 1s linear infinite;
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 10px;
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: none;
         }
         @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+            0% { transform: translateY(-50%) rotate(0deg); }
+            100% { transform: translateY(-50%) rotate(360deg); }
+        }
+        .button-text {
+            padding-left: 5px;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+            text-align: center;
+        }
+        .success {
+            background-color: #e8f5e9;
+            color: #4CAF50;
+            border: 1px solid #c8e6c9;
+        }
+        .error {
+            background-color: #ffebee;
+            color: #f44336;
+            border: 1px solid #ffcdd2;
         }
         .url-alternative {
             word-break: break-all;
@@ -92,36 +98,41 @@
             border-radius: 4px;
             margin: 15px 0;
         }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777777;
+            background-color: #f9f9f9;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>¡Gracias por registrarte!</h1>
+            <h1>¡Gracias por registrarte en Hoken!</h1>
         </div>
         
         <div class="content">
             <p>Hola {{email}},</p>
-            <p>Estás a un paso de activar tu cuenta en Hoken. Haz clic en el siguiente botón para confirmar tu registro:</p>
+            <p>Para completar tu registro, por favor confirma tu cuenta haciendo clic en el siguiente botón:</p>
             
-            <div style="text-align: center;">
-                <button id="confirmButton" class="button" onclick="confirmAccount('{{confirmUrl}}')">
-                    <span id="buttonText">Confirmar mi cuenta</span>
-                    <span id="buttonLoader" class="loader" style="display: none;"></span>
+            <div class="button-container">
+                <button id="confirmButton" class="button" onclick="confirmAccount()">
+                    <span class="loader" id="buttonLoader"></span>
+                    <span class="button-text" id="buttonText">Confirmar mi cuenta</span>
                 </button>
                 
-                <div id="successMessage" class="success-message">
-                    ¡Cuenta confirmada con éxito! Ya puedes cerrar esta ventana.
+                <div id="successMessage" class="message success">
+                    ¡Cuenta confirmada exitosamente! Ya puedes cerrar esta ventana.
                 </div>
-                <div id="errorMessage" class="error-message">
+                <div id="errorMessage" class="message error">
                     Error al confirmar. Por favor copia el enlace manualmente.
                 </div>
             </div>
             
-            <p>Si tienes problemas con el botón, copia y pega esta URL en tu navegador:</p>
-            <p class="url-alternative">
-                {{confirmUrl}}
-            </p>
+            <p>Si el botón no funciona, copia y pega esta URL en tu navegador:</p>
+            <p class="url-alternative">{{confirmUrl}}</p>
         </div>
         
         <div class="footer">
@@ -131,56 +142,104 @@
     </div>
 
     <script>
-        async function confirmAccount(url) {
+        async function confirmAccount() {
             const button = document.getElementById('confirmButton');
             const buttonText = document.getElementById('buttonText');
             const loader = document.getElementById('buttonLoader');
             const successMsg = document.getElementById('successMessage');
             const errorMsg = document.getElementById('errorMessage');
+            const confirmUrl = '{{confirmUrl}}';
             
-         
+           
             successMsg.style.display = 'none';
             errorMsg.style.display = 'none';
-            
-        
             button.disabled = true;
-            buttonText.textContent = ' Procesando...';
-            loader.style.display = 'inline-block';
+            buttonText.textContent = 'Procesando...';
+            loader.style.display = 'block';
             
             try {
-            
-                const response = await fetch(url, {
-                    method: 'GET',
-                    redirect: 'manual', 
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                });
-                
-                if (response.status === 302 || response.status === 200) {
-                    // Éxito
-                    successMsg.style.display = 'block';
-                    button.style.display = 'none';
-                    
-                    setTimeout(() => {
-                        window.close();
-                    }, 3000);
-                } else {
-                    throw new Error(`Error en el servidor: ${response.status}`);
+             
+                const fetchSuccess = await tryFetch(confirmUrl);
+                if (fetchSuccess) {
+                    showSuccess();
+                    return;
                 }
+                
+                const xhrSuccess = await tryXHR(confirmUrl);
+                if (xhrSuccess) {
+                    showSuccess();
+                    return;
+                }
+                
+                await tryIframe(confirmUrl);
+                showSuccess();
                 
             } catch (error) {
                 console.error('Error al confirmar cuenta:', error);
-                
-                errorMsg.style.display = 'block';
-                buttonText.textContent = 'Confirmar mi cuenta';
-                loader.style.display = 'none';
-                button.disabled = false;
-                
-                setTimeout(() => {
-                    errorMsg.style.display = 'none';
-                }, 5000);
+                showError();
             }
+        }
+        
+        function showSuccess() {
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('confirmButton').style.display = 'none';
+        }
+        
+        function showError() {
+            const button = document.getElementById('confirmButton');
+            const buttonText = document.getElementById('buttonText');
+            const loader = document.getElementById('buttonLoader');
+            
+            document.getElementById('errorMessage').style.display = 'block';
+            button.disabled = false;
+            buttonText.textContent = 'Confirmar mi cuenta';
+            loader.style.display = 'none';
+        }
+        
+   
+        async function tryFetch(url) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'manual',
+                    headers: { 'Accept': 'application/json' }
+                });
+                return response.status === 302 || response.ok;
+            } catch {
+                return false;
+            }
+        }
+        
+        function tryXHR(url) {
+            return new Promise((resolve) => {
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);
+                    xhr.onreadystatechange = function() {
+                        if (xhr.readyState === 4) {
+                            resolve(xhr.status === 302 || xhr.status === 200);
+                        }
+                    };
+                    xhr.send();
+                } catch {
+                    resolve(false);
+                }
+            });
+        }
+        
+        function tryIframe(url) {
+            return new Promise((resolve) => {
+                try {
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    iframe.src = url;
+                    iframe.onload = () => resolve(true);
+                    document.body.appendChild(iframe);
+                    setTimeout(resolve, 2000);
+                } catch {
+                    resolve(false);
+                }
+            });
         }
     </script>
 </body>
