@@ -14,7 +14,7 @@ import { join } from 'path';
         transport: {
           host: config.get('MAILTRAP_HOST'),
           port: config.get('MAILTRAP_PORT'),
-          secure: false, // True para puerto 465 (Mailtrap usa 2525 sin SSL)
+          secure: false, 
           auth: {
             user: config.get('MAILTRAP_USER'),
             pass: config.get('MAILTRAP_PASSWORD'),
@@ -24,7 +24,7 @@ import { join } from 'path';
           from: `"${config.get('MAIL_FROM_NAME')}" <${config.get('MAIL_FROM_ADDRESS')}>`,
         },
         template: {
-          dir: join(__dirname, 'templates'), // Ruta a tus plantillas .hbs
+          dir: join(__dirname, 'templates'), 
           adapter: new HandlebarsAdapter(),
           options: {
             strict: true,
