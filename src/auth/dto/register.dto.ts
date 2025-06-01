@@ -31,4 +31,7 @@ export class RegisterDto {
     }
   )
   password: string;
+
+  @IsNotEmpty()
+  recaptchaToken: string;
 }
