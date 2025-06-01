@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Confirmación de Registro</title>
+    <title>Confirmación de Registro - Hoken</title>
     <style type="text/css">
         body {
             font-family: Arial, Helvetica, sans-serif;
@@ -40,6 +40,14 @@
             margin: 20px 0;
             cursor: pointer;
             border: none;
+            transition: all 0.3s ease;
+        }
+        .button:hover {
+            background-color: #1E2B37;
+        }
+        .button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
         .footer {
             padding: 20px;
@@ -52,11 +60,37 @@
             color: #4CAF50;
             display: none;
             margin-top: 20px;
+            font-weight: bold;
         }
         .error-message {
             color: #f44336;
             display: none;
             margin-top: 20px;
+            font-weight: bold;
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #00AEEF;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .url-alternative {
+            word-break: break-all;
+            color: #00AEEF;
+            font-size: 14px;
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 15px 0;
         }
     </style>
 </head>
@@ -71,56 +105,81 @@
             <p>Estás a un paso de activar tu cuenta en Hoken. Haz clic en el siguiente botón para confirmar tu registro:</p>
             
             <div style="text-align: center;">
-                <button onclick="confirmAccount('{{confirmUrl}}')" class="button">
-                    Confirmar mi cuenta
+                <button id="confirmButton" class="button" onclick="confirmAccount('{{confirmUrl}}')">
+                    <span id="buttonText">Confirmar mi cuenta</span>
+                    <span id="buttonLoader" class="loader" style="display: none;"></span>
                 </button>
+                
                 <div id="successMessage" class="success-message">
-                    ¡Cuenta confirmada con éxito! Puedes cerrar esta pestaña.
+                    ¡Cuenta confirmada con éxito! Ya puedes cerrar esta ventana.
                 </div>
                 <div id="errorMessage" class="error-message">
-                    Error al confirmar. Intenta nuevamente.
+                    Error al confirmar. Por favor copia el enlace manualmente.
                 </div>
             </div>
             
             <p>Si tienes problemas con el botón, copia y pega esta URL en tu navegador:</p>
-            <p style="word-break: break-all; color: #00AEEF; font-size: 14px;">
+            <p class="url-alternative">
                 {{confirmUrl}}
             </p>
         </div>
         
         <div class="footer">
             <p>Si no solicitaste este registro, por favor ignora este mensaje.</p>
+            <p>Equipo de Hoken</p>
         </div>
     </div>
 
     <script>
         async function confirmAccount(url) {
-            const button = document.querySelector('.button');
+            const button = document.getElementById('confirmButton');
+            const buttonText = document.getElementById('buttonText');
+            const loader = document.getElementById('buttonLoader');
             const successMsg = document.getElementById('successMessage');
             const errorMsg = document.getElementById('errorMessage');
             
-           
+         
             successMsg.style.display = 'none';
             errorMsg.style.display = 'none';
+            
+        
             button.disabled = true;
-            button.textContent = 'Confirmando...';
+            buttonText.textContent = ' Procesando...';
+            loader.style.display = 'inline-block';
             
             try {
+            
+                const response = await fetch(url, {
+                    method: 'GET',
+                    redirect: 'manual', 
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
                 
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = url;
-                document.body.appendChild(iframe);
-
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                successMsg.style.display = 'block';
-                button.style.display = 'none';
+                if (response.status === 302 || response.status === 200) {
+                    // Éxito
+                    successMsg.style.display = 'block';
+                    button.style.display = 'none';
+                    
+                    setTimeout(() => {
+                        window.close();
+                    }, 3000);
+                } else {
+                    throw new Error(`Error en el servidor: ${response.status}`);
+                }
                 
             } catch (error) {
+                console.error('Error al confirmar cuenta:', error);
+                
                 errorMsg.style.display = 'block';
-                button.textContent = 'Confirmar mi cuenta';
+                buttonText.textContent = 'Confirmar mi cuenta';
+                loader.style.display = 'none';
                 button.disabled = false;
+                
+                setTimeout(() => {
+                    errorMsg.style.display = 'none';
+                }, 5000);
             }
         }
     </script>
