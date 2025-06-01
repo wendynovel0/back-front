@@ -38,6 +38,8 @@
             border-radius: 5px;
             font-weight: bold;
             margin: 20px 0;
+            cursor: pointer;
+            border: none;
         }
         .footer {
             padding: 20px;
@@ -46,10 +48,15 @@
             color: #777777;
             background-color: #f9f9f9;
         }
-        a {
-            color: #00AEEF;
-            text-decoration: none;
-            justify-content: center;
+        .success-message {
+            color: #4CAF50;
+            display: none;
+            margin-top: 20px;
+        }
+        .error-message {
+            color: #f44336;
+            display: none;
+            margin-top: 20px;
         }
     </style>
 </head>
@@ -64,12 +71,18 @@
             <p>Estás a un paso de activar tu cuenta en Hoken. Haz clic en el siguiente botón para confirmar tu registro:</p>
             
             <div style="text-align: center;">
-                <a href="{{confirmUrl}}" class="button">
+                <button onclick="confirmAccount('{{confirmUrl}}')" class="button">
                     Confirmar mi cuenta
-                </a>
+                </button>
+                <div id="successMessage" class="success-message">
+                    ¡Cuenta confirmada con éxito! Puedes cerrar esta pestaña.
+                </div>
+                <div id="errorMessage" class="error-message">
+                    Error al confirmar. Intenta nuevamente.
+                </div>
             </div>
             
-            <p>Si no puedes hacer clic en el botón, copia y pega esta URL en tu navegador:</p>
+            <p>Si tienes problemas con el botón, copia y pega esta URL en tu navegador:</p>
             <p style="word-break: break-all; color: #00AEEF; font-size: 14px;">
                 {{confirmUrl}}
             </p>
@@ -77,8 +90,39 @@
         
         <div class="footer">
             <p>Si no solicitaste este registro, por favor ignora este mensaje.</p>
-            
         </div>
     </div>
+
+    <script>
+        async function confirmAccount(url) {
+            const button = document.querySelector('.button');
+            const successMsg = document.getElementById('successMessage');
+            const errorMsg = document.getElementById('errorMessage');
+            
+           
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            button.disabled = true;
+            button.textContent = 'Confirmando...';
+            
+            try {
+                
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = url;
+                document.body.appendChild(iframe);
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                successMsg.style.display = 'block';
+                button.style.display = 'none';
+                
+            } catch (error) {
+                errorMsg.style.display = 'block';
+                button.textContent = 'Confirmar mi cuenta';
+                button.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
