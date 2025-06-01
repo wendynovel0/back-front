@@ -226,45 +226,36 @@ async findOne(@Param('id') id: string) {
     return this.brandsService.create(createBrandDto, user.user_id);
   }
 
-  @Put(':id')
-  @ApiOperation({ summary: 'Actualizar marca de TI completamente' })
-  @ApiParam({
-    name: 'id',
-    type: Number,
-    description: 'ID de la marca a actualizar',
-    example: 1,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Marca de TI actualizada',
-    type: Brand,
-    examples: {
-      'Marca actualizada': {
-        summary: 'Ejemplo de marca actualizada',
-        value: {
-          brandId: 1,
-          name: 'Microsoft Corporation',
-          description: 'Empresa multinacional de tecnología con sede en Redmond',
-          isActive: true,
-          createdAt: '2023-01-15',
-          updatedAt: '2023-07-05',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
-  @ApiResponse({ status: 404, description: 'Marca no encontrada' })
-  @ApiResponse({ status: 409, description: 'El nombre de la marca ya existe' })
-  async update(
-    @Param('id') id: string,
-    @Body() updateBrandDto: UpdateBrandDto,
-    @CurrentUser() user: User,
-  ) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o usuario no autenticado');
-    }
-    return this.brandsService.update(+id, updateBrandDto, user.user_id);
+ @Put(':id')
+@ApiOperation({ summary: 'Actualizar marca de TI completamente' })
+@ApiParam({
+  name: 'id',
+  type: Number,
+  description: 'ID de la marca a actualizar',
+  example: 1,
+})
+@ApiResponse({
+  status: 200,
+  description: 'Marca actualizada exitosamente',
+  schema: {
+    example: { message: 'Marca actualizada exitosamente' },
+  },
+})
+@ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
+@ApiResponse({ status: 404, description: 'Marca no encontrada' })
+@ApiResponse({ status: 409, description: 'El nombre de la marca ya existe' })
+async update(
+  @Param('id') id: string,
+  @Body() updateBrandDto: UpdateBrandDto,
+  @CurrentUser() user: User,
+) {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
+
+  await this.brandsService.update(+id, updateBrandDto, user.user_id);
+  return { message: 'Marca actualizada exitosamente' };
+}
 
 @Delete(':id')
 @ApiOperation({ summary: 'Desactivar marca de TI (eliminación lógica)' })
@@ -293,37 +284,28 @@ async remove(@Param('id') id: string, @CurrentUser() user: User) {
 }
 
   @Patch(':id/activate')
-  @ApiOperation({ summary: 'Reactivar marca de TI' })
-  @ApiParam({
-    name: 'id',
-    type: Number,
-    description: 'ID de la marca a reactivar',
-    example: 3,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Marca de TI reactivada',
-    type: Brand,
-    examples: {
-      'Marca reactivada': {
-        summary: 'Ejemplo de marca reactivada',
-        value: {
-          brandId: 3,
-          name: 'BlackBerry',
-          description: 'Antiguo fabricante de smartphones',
-          isActive: true,
-          createdAt: '2023-01-20',
-          updatedAt: '2023-07-05',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
-  @ApiResponse({ status: 404, description: 'Marca no encontrada' })
-  async activate(@Param('id') id: string, @CurrentUser() user: User) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o usuario no autenticado');
-    }
-    return this.brandsService.activate(+id, user.user_id);
+@ApiOperation({ summary: 'Reactivar marca de TI' })
+@ApiParam({
+  name: 'id',
+  type: Number,
+  description: 'ID de la marca a reactivar',
+  example: 3,
+})
+@ApiResponse({
+  status: 200,
+  description: 'Marca reactivada exitosamente',
+  schema: {
+    example: { message: 'Marca reactivada exitosamente' },
+  },
+})
+@ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
+@ApiResponse({ status: 404, description: 'Marca no encontrada' })
+async activate(@Param('id') id: string, @CurrentUser() user: User) {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
+
+  await this.brandsService.activate(+id, user.user_id);
+  return { message: 'Marca reactivada exitosamente' };
+}
 }
