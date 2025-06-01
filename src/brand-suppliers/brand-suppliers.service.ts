@@ -188,21 +188,39 @@ async findOne(id: number): Promise<BrandSupplier> {
     }
   }
 
+  async reactivate(id: number, user: User): Promise<void> {
+  const supplier = await this.findOne(id);
+
+  if (!supplier) {
+    throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
+  }
+
+  supplier.isActive = true;
+  supplier.updatedAt = new Date();
+
+  await this.brandSupplierRepository.save(supplier);
+}
+
+
   async remove(id: number, user: User): Promise<void> {
   const supplier = await this.findOne(id);
-  
+
+  if (!supplier) {
+    throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
+  }
+
   await this.actionLogsService.logAction({
     userId: user.user_id,
     actionType: 'DELETE',
     entityType: 'BrandSupplier',
-    entityId: supplier.id, // Changed from supplierId to id
+    entityId: supplier.id,
     oldValue: supplier,
   });
 
-  const result = await this.brandSupplierRepository.delete(id);
+  supplier.isActive = false;
+  supplier.deletedAt = new Date();
 
-  if (result.affected === 0) {
-    throw new NotFoundException(`Proveedor con ID ${id} no encontrado`);
-  }
+  await this.brandSupplierRepository.save(supplier);
 }
+
 }
