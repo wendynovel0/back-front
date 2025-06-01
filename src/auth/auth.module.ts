@@ -14,6 +14,7 @@ import { UsersModule } from '../users/users.module';
 import { UserVerificationService } from 'src/auth/services/user-verification.service';
 import { MailModule } from '../mail/mail.module';
 import { LogsModule } from 'src/action-logs/action-logs.module';
+import { RecaptchaModule } from 'src/recaptcha/recaptcha.module';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { LogsModule } from 'src/action-logs/action-logs.module';
     forwardRef(() => UsersModule), 
 
     MailModule, 
-
+    RecaptchaModule,
     ConfigModule, 
   ],
   controllers: [AuthController],
