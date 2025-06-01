@@ -277,19 +277,23 @@ async findByActivationToken(token: string): Promise<User | null> {
     return this.userRepository.save(user); 
   }
 
-async activateUserByToken(token: string): Promise<void> {
-  const result = await this.userRepository.update(
-    { activation_token: token },
-    { 
-      is_active: true,
-      activation_token: null,
-      activated_at: new Date() 
+async activateUserByToken(token: string): Promise<User> {
+  const user = await this.userRepository.findOne({ 
+    where: { 
+      activation_token: token,
+      is_active: false 
     }
-  );
+  });
 
-  if (result.affected === 0) {
-    throw new NotFoundException('Token de activación inválido');
+  if (!user) {
+    throw new NotFoundException('Token inválido o cuenta ya activada');
   }
+
+  user.is_active = true;
+  user.activation_token = null;
+  user.activated_at = new Date();
+
+  return this.userRepository.save(user);
 }
 
   async confirmUser(activationToken: string): Promise<any> {
