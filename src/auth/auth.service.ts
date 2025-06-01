@@ -64,8 +64,13 @@ export class AuthService {
   try {
     const hashedPassword = await this.hashPassword(password);
 
-    const activationToken = crypto.randomUUID(); // o usa un generador seguro
-
+   const activationToken = this.jwtService.sign(
+    { email: normalizedEmail },
+    { 
+      secret: this.configService.get('JWT_ACTIVATION_SECRET'),
+      expiresIn: '24h' 
+    }
+  );
     await this.usersService.create({
       email: normalizedEmail,
       password_hash: hashedPassword,
@@ -204,22 +209,24 @@ async isBlacklisted(token: string): Promise<boolean> {
   }
 }
 
+
 async confirmAccount(token: string): Promise<string> {
   try {
-    
     const decoded = this.jwtService.verify(token, {
       secret: this.configService.get('JWT_ACTIVATION_SECRET'),
     });
 
+
     await this.usersService.activateUserByToken(token);
-    return decoded.email; 
+    return decoded.email;
 
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      throw new BadRequestException('El token de activación ha expirado');
+      throw new BadRequestException('Token expirado');
     }
-    throw new BadRequestException('Token de activación inválido');
+    throw new BadRequestException('Token inválido');
   }
+  
 }
 
   private async validateUser(email: string, password: string): Promise<User> {

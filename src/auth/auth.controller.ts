@@ -11,7 +11,9 @@ import {
   Param,
   BadRequestException,
   Res,
-  Inject
+  Inject,
+  Redirect,
+  Query
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -90,27 +92,30 @@ export class AuthController {
   return this.authService.register(registerDto); 
 }
 
-	@Get('confirm/:token')
+@Get('confirm-email')
+@Redirect()
 async confirmAccount(
-  @Param('token') token: string,
-  @Res() res: Response,
+  @Query('token') token: string,
+  @Res({ passthrough: true }) res?: Response 
 ) {
+  const frontendUrl = this.configService.get('FRONTEND_URL');
+
   try {
-
     const userEmail = await this.authService.confirmAccount(token);
-
-
     await this.mailService.sendActivationSuccessEmail(userEmail);
 
-
-    const frontendUrl = this.configService.get('FRONTEND_URL');
-    return res.redirect(`${frontendUrl}/activation-success?email=${encodeURIComponent(userEmail)}`);
-
+    return {
+      url: `${frontendUrl}/activation-success?email=${encodeURIComponent(userEmail)}`,
+      statusCode: 302,
+    };
   } catch (error) {
-    const frontendUrl = this.configService.get('FRONTEND_URL');
-    return res.redirect(`${frontendUrl}/activation-error?message=${encodeURIComponent(error.message)}`);
+    return {
+      url: `${frontendUrl}/activation-error?message=${encodeURIComponent(error.message)}`,
+      statusCode: 302,
+    };
   }
 }
+
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
