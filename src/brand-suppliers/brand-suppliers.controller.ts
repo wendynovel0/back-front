@@ -264,177 +264,95 @@ async create(
 
 
   @Put(':id')
-  @ApiOperation({ 
-    summary: 'Reemplazar completamente un proveedor',
-    description: 'Actualiza todos los campos del proveedor. Para actualización parcial use PATCH.'
-  })
-  @ApiParam({ 
-    name: 'id', 
-    example: 1, 
-    description: 'ID del proveedor a actualizar',
-    type: Number
-  })
-  @ApiBody({ 
-    type: CreateBrandSupplierDto,
-    examples: {
-      'Actualización completa': {
-        summary: 'Ejemplo de actualización completa',
-        value: {
-          name: 'Nuevo Nombre del Proveedor',
-          contactPerson: 'Nuevo Contacto',
-          email: 'nuevo@email.com',
-          phone: '987654321',
-          address: 'Nueva Dirección 123',
-          brandId: 2,
-          isActive: false
-        }
-      }
+@ApiOperation({
+  summary: 'Reemplazar completamente un proveedor',
+  description: 'Actualiza todos los campos del proveedor. Para actualización parcial use PATCH.'
+})
+@ApiParam({
+  name: 'id',
+  example: 1,
+  description: 'ID del proveedor a actualizar',
+  type: Number
+})
+@ApiBody({
+  type: CreateBrandSupplierDto,
+})
+@ApiResponse({
+  status: 200,
+  description: 'Proveedor actualizado completamente',
+  schema: {
+    example: {
+      message: 'Actualizado con éxito'
     }
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Proveedor actualizado completamente',
-    type: BrandSupplier,
-    examples: {
-      'Proveedor actualizado': {
-        summary: 'Ejemplo de respuesta exitosa',
-        value: {
-          supplierId: 1,
-          name: 'Nuevo Nombre del Proveedor',
-          contactPerson: 'Nuevo Contacto',
-          email: 'nuevo@email.com',
-          phone: '987654321',
-          address: 'Nueva Dirección 123',
-          isActive: false,
-          createdAt: '2023-05-15',
-          updatedAt: '2023-06-01',
-          brand: {
-            brandId: 2,
-            name: 'Adidas'
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Datos de entrada inválidos'
-  })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Proveedor no encontrado'
-  })
-  @ApiResponse({ 
-    status: 409, 
-    description: 'El email ya está registrado'
-  })
-  async replace(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() createBrandSupplierDto: CreateBrandSupplierDto,
-    @Request() req: { user: User },
-  ): Promise<BrandSupplier> {
-    return this.brandSuppliersService.replace(id, createBrandSupplierDto, req.user);
   }
+})
+@ApiResponse({ status: 400, description: 'Datos de entrada inválidos' })
+@ApiResponse({ status: 404, description: 'Proveedor no encontrado' })
+@ApiResponse({ status: 409, description: 'El email ya está registrado' })
+async replace(
+  @Param('id', ParseIntPipe) id: number,
+  @Body() createBrandSupplierDto: CreateBrandSupplierDto,
+  @Request() req: { user: User },
+): Promise<{ message: string }> {
+  await this.brandSuppliersService.replace(id, createBrandSupplierDto, req.user);
+  return { message: 'Actualizado con éxito' };
+}
 
-  @Patch(':id')
-  @ApiOperation({ 
-    summary: 'Actualizar parcialmente un proveedor',
-    description: 'Actualiza solo los campos proporcionados del proveedor.'
-  })
-  @ApiParam({ 
-    name: 'id', 
-    example: 1, 
-    description: 'ID del proveedor a actualizar',
-    type: Number
-  })
-  @ApiBody({ 
-    type: UpdateBrandSupplierDto,
-    examples: {
-      'Actualización parcial': {
-        summary: 'Ejemplo de actualización parcial',
-        value: {
-          contactPerson: 'Nuevo Contacto Actualizado',
-          phone: '912345678'
-        }
-      }
+  @Patch(':id/reactivate')
+@ApiOperation({
+  summary: 'Reactivar proveedor',
+  description: 'Activa nuevamente un proveedor previamente desactivado.'
+})
+@ApiParam({
+  name: 'id',
+  example: 1,
+  description: 'ID del proveedor a reactivar',
+  type: Number
+})
+@ApiResponse({
+  status: 200,
+  description: 'Proveedor reactivado con éxito',
+  schema: {
+    example: {
+      message: 'Reactivado con éxito'
     }
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Proveedor actualizado parcialmente',
-    type: BrandSupplier,
-    examples: {
-      'Proveedor actualizado': {
-        summary: 'Ejemplo de respuesta exitosa',
-        value: {
-          supplierId: 1,
-          name: 'Proveedor de Materiales Premium S.A.',
-          contactPerson: 'Nuevo Contacto Actualizado',
-          email: 'contacto@proveedormaterials.com',
-          phone: '912345678',
-          address: 'Av. Industrial 123, Lima, Perú',
-          isActive: true,
-          createdAt: '2023-05-15',
-          updatedAt: '2023-06-01',
-          brand: {
-            brandId: 1,
-            name: 'Nike'
-          }
-        }
-      }
-    }
-  })
-  @ApiResponse({ 
-    status: 400, 
-    description: 'Datos de entrada inválidos'
-  })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Proveedor no encontrado'
-  })
-  @ApiResponse({ 
-    status: 409, 
-    description: 'El email ya está registrado'
-  })
-  async update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateBrandSupplierDto: UpdateBrandSupplierDto,
-    @Request() req: { user: User },
-  ): Promise<BrandSupplier> {
-    return this.brandSuppliersService.update(id, updateBrandSupplierDto, req.user);
   }
+})
+@ApiResponse({ status: 404, description: 'Proveedor no encontrado' })
+async reactivate(
+  @Param('id', ParseIntPipe) id: number,
+  @Request() req: { user: User },
+): Promise<{ message: string }> {
+  await this.brandSuppliersService.reactivate(id, req.user);
+  return { message: 'Reactivado con éxito' };
+}
 
   @Delete(':id')
-  @ApiOperation({ 
-    summary: 'Eliminar un proveedor',
-    description: 'Elimina permanentemente un proveedor del sistema.'
-  })
-  @ApiParam({ 
-    name: 'id', 
-    example: 1, 
-    description: 'ID del proveedor a eliminar',
-    type: Number
-  })
-  @ApiResponse({ 
-    status: 200, 
-    description: 'Proveedor eliminado exitosamente',
-    examples: {
-      'Eliminación exitosa': {
-        summary: 'Respuesta de éxito',
-        value: {
-          message: 'Proveedor con ID 1 eliminado exitosamente'
-        }
-      }
+@ApiOperation({
+  summary: 'Eliminar un proveedor',
+  description: 'Elimina permanentemente un proveedor del sistema.'
+})
+@ApiParam({
+  name: 'id',
+  example: 1,
+  description: 'ID del proveedor a eliminar',
+  type: Number
+})
+@ApiResponse({
+  status: 200,
+  description: 'Proveedor eliminado exitosamente',
+  schema: {
+    example: {
+      message: 'Eliminado con éxito'
     }
-  })
-  @ApiResponse({ 
-    status: 404, 
-    description: 'Proveedor no encontrado'
-  })
-  async remove(
-    @Param('id', ParseIntPipe) id: number,
-    @Request() req: { user: User },
-  ): Promise<void> {
-    return this.brandSuppliersService.remove(id, req.user);
   }
+})
+@ApiResponse({ status: 404, description: 'Proveedor no encontrado' })
+async remove(
+  @Param('id', ParseIntPipe) id: number,
+  @Request() req: { user: User },
+): Promise<{ message: string }> {
+  await this.brandSuppliersService.remove(id, req.user);
+  return { message: 'Eliminado con éxito' };
+}
 }
