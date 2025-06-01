@@ -1,14 +1,93 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>¡Activación Exitosa!</title>
-    <style>
-        body { font-family: Arial; text-align: center; padding: 40px; }
-        .success { color: #4CAF50; font-size: 24px; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activación Exitosa - Hoken</title>
+    <style type="text/css">
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            background-color: #2A3E4C;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            padding: 30px;
+            text-align: center;
+        }
+        .success-message {
+            color: #4CAF50;
+            font-size: 24px;
+            margin-bottom: 25px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2A3E4C;
+            color: #00AEEF;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .button:hover {
+            background-color: #1E2B37;
+        }
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #777777;
+            background-color: #f9f9f9;
+        }
+        .url-alternative {
+            word-break: break-all;
+            color: #00AEEF;
+            font-size: 14px;
+            margin: 15px 0;
+        }
     </style>
 </head>
 <body>
-    <div class="success">✅ ¡Tu cuenta en Hoken ha sido activada!</div>
-    <p>Ahora puedes iniciar sesión <a href="{{frontendUrl}}/login">aquí</a>.</p>
+    <div class="container">
+        <div class="header">
+            <h1>¡Activación Exitosa!</h1>
+        </div>
+        
+        <div class="content">
+            <div class="success-message">✅ ¡Tu cuenta en Hoken ha sido activada!</div>
+            
+            <p>Ahora puedes acceder a tu cuenta:</p>
+            
+            <div>
+                <a href="https://back-4vmo.onrender.com/api#" class="button">
+                    Iniciar Sesión
+                </a>
+            </div>
+            
+            <p class="url-alternative">
+                O visita: https://back-4vmo.onrender.com/api#
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>Si no reconoces esta actividad, por favor contacta a nuestro soporte.</p>
+        </div>
+    </div>
 </body>
 </html>
