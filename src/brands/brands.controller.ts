@@ -266,40 +266,31 @@ async findOne(@Param('id') id: string) {
     return this.brandsService.update(+id, updateBrandDto, user.user_id);
   }
 
-  @Delete(':id')
-  @ApiOperation({ summary: 'Desactivar marca de TI (eliminación lógica)' })
-  @ApiParam({
-    name: 'id',
-    type: Number,
-    description: 'ID de la marca a desactivar',
-    example: 2,
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Marca de TI desactivada',
-    type: Brand,
-    examples: {
-      'Marca desactivada': {
-        summary: 'Ejemplo de marca desactivada',
-        value: {
-          brandId: 2,
-          name: 'Apple',
-          description: 'Fabricante de hardware y software premium',
-          isActive: false,
-          createdAt: '2023-02-10',
-          updatedAt: '2023-07-05',
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
-  @ApiResponse({ status: 404, description: 'Marca no encontrada' })
-  async remove(@Param('id') id: string, @CurrentUser() user: User) {
-    if (!user) {
-      throw new UnauthorizedException('Token inválido o usuario no autenticado');
-    }
-    return this.brandsService.deactivate(+id, user.user_id);
+@Delete(':id')
+@ApiOperation({ summary: 'Desactivar marca de TI (eliminación lógica)' })
+@ApiParam({
+  name: 'id',
+  type: Number,
+  description: 'ID de la marca a desactivar',
+  example: 2,
+})
+@ApiResponse({
+  status: 200,
+  description: 'Marca eliminada exitosamente',
+  schema: {
+    example: { message: 'Marca eliminada exitosamente' },
+  },
+})
+@ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
+@ApiResponse({ status: 404, description: 'Marca no encontrada' })
+async remove(@Param('id') id: string, @CurrentUser() user: User) {
+  if (!user) {
+    throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
+
+  await this.brandsService.remove(+id, user.user_id);
+  return { message: 'Marca eliminada exitosamente' };
+}
 
   @Patch(':id/activate')
   @ApiOperation({ summary: 'Reactivar marca de TI' })
