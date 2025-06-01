@@ -7,8 +7,8 @@ import { UpdateBrandSupplierDto } from './dto/update-brand-supplier.dto';
 import { ActionLogsService } from '../action-logs/action-logs.service';
 import { User } from '../users/entities/user.entity';
 import { BrandSupplierView } from './entities/brand-suppliers-view.entity';
-import { applyDefaultOrder } from '../common/helpers/query.helpers';
-
+import { DateRangeFilterDto } from '../common/dto/date-range-filter.dto';
+import { applyDateRangeFilter } from '../common/utils/query.utils'; 
 
 @Injectable()
 export class BrandSuppliersService {
@@ -21,98 +21,74 @@ export class BrandSuppliersService {
     private readonly dataSource: DataSource,
   ) {}
 
- async findAll(filters: {
+ findAll(filters: {
   search?: string;
-  createdStartDate?: string;
-  createdEndDate?: string;
-  updatedStartDate?: string;
-  updatedEndDate?: string;
   brandIds?: number[];
   isActive?: boolean;
+  dateFilter?: {
+    dateType: 'created_at' | 'updated_at' | 'deleted_at';
+    startDate: string;
+    endDate: string;
+  };
 }): Promise<BrandSupplierView[]> {
-  const {
-    search,
-    createdStartDate,
-    createdEndDate,
-    updatedStartDate,
-    updatedEndDate,
-    brandIds,
-    isActive
-  } = filters;
+  const { search, brandIds, isActive, dateFilter } = filters;
 
-  if ((createdStartDate && !createdEndDate) || (!createdStartDate && createdEndDate)) {
-    throw new BadRequestException('Debe proporcionar ambas fechas: createdStartDate y createdEndDate');
-  }
-
-  if (createdStartDate && createdEndDate) {
-    const start = new Date(createdStartDate);
-    const end = new Date(createdEndDate);
-    const now = new Date();
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new BadRequestException('Fechas inválidas, formato esperado YYYY-MM-DD');
-    }
-    if (start > end) {
-      throw new BadRequestException('createdStartDate no puede ser mayor que createdEndDate');
-    }
-    if (end > now) {
-      throw new BadRequestException('createdEndDate no puede ser una fecha futura');
-    }
-  }
-
-  if ((updatedStartDate && !updatedEndDate) || (!updatedStartDate && updatedEndDate)) {
-    throw new BadRequestException('Debe proporcionar ambas fechas: updatedStartDate y updatedEndDate');
-  }
-
-  if (updatedStartDate && updatedEndDate) {
-    const start = new Date(updatedStartDate);
-    const end = new Date(updatedEndDate);
-    const now = new Date();
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      throw new BadRequestException('Fechas inválidas, formato esperado YYYY-MM-DD');
-    }
-    if (start > end) {
-      throw new BadRequestException('updatedStartDate no puede ser mayor que updatedEndDate');
-    }
-    if (end > now) {
-      throw new BadRequestException('updatedEndDate no puede ser una fecha futura');
-    }
-  }
-
+  const now = new Date();
   const query = this.brandSuppliersViewRepository.createQueryBuilder('supplier');
 
+  // Validación del rango de fechas combinado
+  if (dateFilter) {
+    const { dateType, startDate, endDate } = dateFilter;
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    if (!dateType || !startDate || !endDate) {
+      throw new BadRequestException('Debe proporcionar dateType, startDate y endDate.');
+    }
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      throw new BadRequestException('Fechas inválidas, formato esperado: YYYY-MM-DD');
+    }
+
+    if (start > end) {
+      throw new BadRequestException('startDate no puede ser mayor que endDate.');
+    }
+
+    if (end > now) {
+      throw new BadRequestException('endDate no puede ser una fecha futura.');
+    }
+
+    query.andWhere(`supplier.${dateType} BETWEEN :start AND :end`, {
+      start: startDate,
+      end: endDate
+    });
+  }
+
+  // Búsqueda por texto
   if (search) {
     query.andWhere(
-      `(LOWER(supplier.supplier_name) LIKE LOWER(:search) OR LOWER(supplier.contact_person) LIKE LOWER(:search) OR LOWER(supplier.email) LIKE LOWER(:search) OR LOWER(supplier.brand_name) LIKE LOWER(:search))`,
+      `(LOWER(supplier.supplier_name) LIKE LOWER(:search)
+        OR LOWER(supplier.contact_person) LIKE LOWER(:search)
+        OR LOWER(supplier.email) LIKE LOWER(:search)
+        OR LOWER(supplier.brand_name) LIKE LOWER(:search))`,
       { search: `%${search}%` }
     );
   }
 
-  if (createdStartDate && createdEndDate) {
-    query.andWhere('supplier.created_at BETWEEN :start AND :end', {
-      start: createdStartDate,
-      end: createdEndDate
-    });
-  }
-
-  if (updatedStartDate && updatedEndDate) {
-    query.andWhere('supplier.updated_at BETWEEN :startU AND :endU', {
-      startU: updatedStartDate,
-      endU: updatedEndDate
-    });
-  }
-
-  if (brandIds && brandIds.length > 0) {
+  // Filtrado por marcas
+  if (brandIds?.length) {
     query.andWhere('supplier.brand_id IN (:...brandIds)', { brandIds });
   }
 
+  // Filtrado por estado activo
   if (typeof isActive === 'boolean') {
     query.andWhere('supplier.supplier_is_active = :isActive', { isActive });
   }
 
   return query.orderBy('supplier.supplier_name', 'DESC').getMany();
 }
+
 
   
 async findOne(id: number): Promise<BrandSupplier> {

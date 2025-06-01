@@ -18,7 +18,7 @@ export class BrandSuppliersController {
 @Get()
 @ApiOperation({
   summary: 'Buscar proveedores con filtros combinados',
-  description: 'Permite buscar proveedores por nombre, marca, fechas de creación/edición o marca. Todos los parámetros son opcionales.'
+  description: 'Permite buscar proveedores por nombre, marca, estado, y por fecha (creación, actualización o eliminación). Todos los parámetros son opcionales.'
 })
 @ApiQuery({
   name: 'search',
@@ -26,34 +26,6 @@ export class BrandSuppliersController {
   type: String,
   description: 'Texto para buscar en nombre del proveedor, persona de contacto, email o marca',
   example: 'Samsung'
-})
-@ApiQuery({
-  name: 'createdStartDate',
-  required: false,
-  type: String,
-  description: 'Fecha inicial de creación (YYYY-MM-DD)',
-  example: '2023-01-01'
-})
-@ApiQuery({
-  name: 'createdEndDate',
-  required: false,
-  type: String,
-  description: 'Fecha final de creación (YYYY-MM-DD)',
-  example: '2023-12-31'
-})
-@ApiQuery({
-  name: 'updatedStartDate',
-  required: false,
-  type: String,
-  description: 'Fecha inicial de actualización (YYYY-MM-DD)',
-  example: '2023-01-01'
-})
-@ApiQuery({
-  name: 'updatedEndDate',
-  required: false,
-  type: String,
-  description: 'Fecha final de actualización (YYYY-MM-DD)',
-  example: '2023-12-31'
 })
 @ApiQuery({
   name: 'brandIds',
@@ -69,43 +41,58 @@ export class BrandSuppliersController {
   description: 'Filtrar por si el proveedor está activo (true/false)',
   example: 'true'
 })
+@ApiQuery({
+  name: 'dateType',
+  required: false,
+  enum: ['created_at', 'updated_at', 'deleted_at'],
+  description: 'Tipo de fecha a filtrar'
+})
+@ApiQuery({
+  name: 'startDate',
+  required: false,
+  type: String,
+  description: 'Fecha inicial (YYYY-MM-DD)',
+  example: '2023-01-01'
+})
+@ApiQuery({
+  name: 'endDate',
+  required: false,
+  type: String,
+  description: 'Fecha final (YYYY-MM-DD)',
+  example: '2023-12-31'
+})
 @ApiResponse({
   status: 200,
   description: 'Lista de proveedores encontrados',
-  type: BrandSupplierView,
-  isArray: true
+  type: [BrandSupplierView],
 })
 async findAll(
   @Query('search') search?: string,
-  @Query('createdStartDate') createdStartDate?: string,
-  @Query('createdEndDate') createdEndDate?: string,
-  @Query('updatedStartDate') updatedStartDate?: string,
-  @Query('updatedEndDate') updatedEndDate?: string,
-  @Query('brandIds') brandIds?: string,
-  @Query('isActive') isActive?: string
+  @Query('brandIds') brandIdsRaw?: string,
+  @Query('isActive') isActive?: boolean,
+  @Query('dateType') dateType?: 'created_at' | 'updated_at' | 'deleted_at',
+  @Query('startDate') startDate?: string,
+  @Query('endDate') endDate?: string
 ): Promise<BrandSupplierView[]> {
-  const brandIdsArray = brandIds
-    ? brandIds.split(',').map(id => parseInt(id.trim()))
-    : undefined;
+  const brandIds = brandIdsRaw
+    ? brandIdsRaw
+        .split(',')
+        .map((id) => parseInt(id.trim(), 10))
+        .filter((id) => !isNaN(id))
+    : [];
 
-  let isActiveBoolean: boolean | undefined = undefined;
-  if (isActive === 'true') isActiveBoolean = true;
-  else if (isActive === 'false') isActiveBoolean = false;
-  else if (isActive !== undefined) {
-    throw new BadRequestException('El valor de isActive debe ser "true" o "false".');
-  }
+  const dateFilter =
+    dateType && startDate && endDate
+      ? { dateType, startDate, endDate }
+      : undefined;
 
   return this.brandSuppliersService.findAll({
     search,
-    createdStartDate,
-    createdEndDate,
-    updatedStartDate,
-    updatedEndDate,
-    brandIds: brandIdsArray,
-    isActive: isActiveBoolean,
+    brandIds,
+    isActive,
+    dateFilter,
   });
 }
-
 
   @Get(':id')
 @ApiOperation({ summary: 'Obtener proveedor por ID' })

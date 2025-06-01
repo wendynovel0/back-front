@@ -1,29 +1,41 @@
 // src/brand-suppliers/entities/brand-supplier.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { Brand } from '../../brands/entities/brand.entity';
-import { User } from '../../users/entities/user.entity';
 
 @Entity({ name: 'brand_suppliers' })
 export class BrandSupplier {
-  @PrimaryGeneratedColumn({ name: 'supplier_id' })
-  id: number; // Changed from supplierId to id to match Brand entity pattern
+  @PrimaryGeneratedColumn({ name: 'supplier_id', type: 'bigint' })
+  id: number;
 
-  @Column({ name: 'name' })
+  @Column({ name: 'name', type: 'varchar', length: 100 })
   name: string;
 
-  @Column({ name: 'contact_person', nullable: true })
+  @Column({ name: 'contact_person', type: 'varchar', length: 100, nullable: true })
   contactPerson?: string;
 
-  @Column({ name: 'email' })
+  @Column({ name: 'email', type: 'varchar', length: 100, unique: true })
   email: string;
 
-  @Column({ name: 'phone', nullable: true })
+  @Column({ name: 'phone', type: 'varchar', length: 15, nullable: true })
   phone?: string;
 
-  @Column({ name: 'address', nullable: true })
+  @Column({ name: 'address', type: 'text', nullable: true })
   address?: string;
 
-  @Column({ name: 'is_active', default: true })
+  @Column({ name: 'brand_id', type: 'bigint' })
+  brandId: number;
+
+  @ManyToOne(() => Brand, (brand) => brand.suppliers)
+  @JoinColumn({ name: 'brand_id' })
+  brand: Brand;
+
+  @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive: boolean;
 
   @Column({ name: 'created_at', type: 'date', default: () => 'CURRENT_DATE' })
@@ -32,10 +44,6 @@ export class BrandSupplier {
   @Column({ name: 'updated_at', type: 'date', default: () => 'CURRENT_DATE' })
   updatedAt: Date;
 
-  @ManyToOne(() => Brand, (brand) => brand.suppliers)
-  @JoinColumn({ name: 'brand_id' })
-  brand: Brand;
-
-  @Column({ name: 'brand_id' })
-  brandId: number;
+  @Column({ name: 'deleted_at', type: 'date', nullable: true })
+  deletedAt?: Date;
 }
