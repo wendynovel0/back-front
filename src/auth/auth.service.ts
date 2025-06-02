@@ -99,6 +99,8 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<any> {
   const { email, password, recaptchaToken } = loginDto;
+    console.log('Login DTO recibido:', loginDto);
+
 
   await this.recaptchaService.verify(recaptchaToken);
 
