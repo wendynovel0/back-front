@@ -17,6 +17,7 @@ export class RecaptchaGuard implements CanActivate {
     const recaptchaToken =
       request.body?.recaptchaToken ||
       request.headers['x-recaptcha-token'];
+      console.log('recaptchaToken recibido:', recaptchaToken);
 
     if (!recaptchaToken) {
       throw new UnauthorizedException('Token de reCAPTCHA no proporcionado');
