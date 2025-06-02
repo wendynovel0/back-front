@@ -101,9 +101,6 @@ export class AuthService {
   const { email, password, recaptchaToken } = loginDto;
     console.log('Login DTO recibido:', loginDto);
 
-
-  await this.recaptchaService.verify(recaptchaToken);
-
   try {
     const normalizedEmail = email.toLowerCase().trim();
     const user = await this.validateUser(normalizedEmail, password);
