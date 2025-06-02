@@ -26,12 +26,19 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   app.enableCors({
-    origin: process.env.FRONTEND_URL, 
-    methods: 'GET,POST,PUT,PATCH,DELETE',
-    credentials: true,
-  });
-  await app.listen(port);
-  console.log(`App running on port ${port}`);
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'https://tienda-frontend.onrender.com',
+    ];
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+});
 }
 bootstrap();
   
