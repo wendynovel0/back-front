@@ -242,6 +242,7 @@ async confirmAccount(token: string): Promise<string> {
 
   private async validateUser(email: string, password: string): Promise<User> {
     const user = await this.usersService.findByEmailWithPassword(email);
+    console.log('Usuario encontrado:', user);
     
     if (!user) {
       throw new UnauthorizedException('Credenciales inválidas');
@@ -252,6 +253,8 @@ async confirmAccount(token: string): Promise<string> {
     }
 
     const isValidPassword = await this.comparePasswords(password, user.password_hash);
+    console.log('✅ ¿Contraseña coincide?:', isValidPassword);
+    
     if (!isValidPassword) {
       throw new UnauthorizedException('Credenciales inválidas');
     }
@@ -269,9 +272,15 @@ async confirmAccount(token: string): Promise<string> {
   }
 
   private async comparePasswords(plainTextPassword: string, hash: string): Promise<boolean> {
-    if (!plainTextPassword || !hash) return false;
-    return bcrypt.compare(plainTextPassword, hash);
+  if (!plainTextPassword || !hash) {
+    console.log('❌ Contraseña o hash no proporcionados');
+    return false;
   }
+
+  const result = await bcrypt.compare(plainTextPassword, hash);
+  console.log('🔐 Resultado de bcrypt.compare:', result);
+  return result;
+}
 
 
   private isValidBcryptHash(hash: string): boolean {
