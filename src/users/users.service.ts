@@ -218,7 +218,7 @@ async findOneActive(user_id: number): Promise<User | null> {
   try {
     return await this.userRepository
       .createQueryBuilder('user')
-      .addSelect(['user.email', 'user.password_hash']) // Asegura que email esté incluido
+      .addSelect('user.password_hash') // Solo la contraseña
       .where('LOWER(user.email) = LOWER(:email)', { email })
       .getOne();
   } catch (error) {
