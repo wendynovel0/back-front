@@ -24,6 +24,9 @@ export class RecaptchaService {
       },
     );
 
+    console.log('Respuesta de reCAPTCHA:', data);
+
+
     if (!data.success) {
       throw new UnauthorizedException('Falló la verificación de reCAPTCHA');
     }
