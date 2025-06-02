@@ -26,20 +26,9 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   app.enableCors({
-  origin: (origin, callback) => {
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'https://tienda-frontend.onrender.com',
-    ];
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: ['http://localhost:5173', 'https://tienda-frontend.onrender.com'],
   credentials: true,
 });
-
   await app.listen(port);
 
 }
