@@ -49,9 +49,6 @@ export class AuthService {
   async register(registerDto: RegisterDto): Promise<any> {
   const { email, password, recaptchaToken } = registerDto;
 
-  // Validar reCAPTCHA
-  await this.recaptchaService.verify(recaptchaToken);
-
   if (!email || !password) {
     throw new UnauthorizedException('Se requieren email y contraseña');
   }
