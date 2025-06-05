@@ -117,11 +117,13 @@
             <p>Hola {{email}},</p>
             <p>Para completar tu registro, por favor confirma tu cuenta haciendo clic en el siguiente botón:</p>
             
-            <div class="button-container">
-                <button id="confirmButton" class="button" onclick="confirmAccount()">
-                    <span class="loader" id="buttonLoader"></span>
-                    <span class="button-text" id="buttonText">Confirmar mi cuenta</span>
-                </button>
+            <div class="button-container" style="text-align:center; margin:25px 0;">
+                <a href="{{confirmUrl}}" 
+                    style="display:inline-block; background-color:#2A3E4C; color:#00AEEF; padding:12px 24px; border-radius:5px; font-weight:bold; text-decoration:none;">
+                    Confirmar mi cuenta
+                </a>
+            </div>
+
                 
                 <div id="successMessage" class="message success">
                     ¡Cuenta confirmada exitosamente! Ya puedes cerrar esta ventana.
