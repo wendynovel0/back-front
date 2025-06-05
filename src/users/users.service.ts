@@ -275,6 +275,8 @@ async findByActivationToken(token: string): Promise<User | null> {
 
   async activateUser(token: string): Promise<User> {
     const user = await this.findByActivationToken(token);
+    console.log('Usuario con token:', user);
+
     if (!user) {
       throw new NotFoundException('Token inválido');
     }
