@@ -27,10 +27,10 @@ export class BrandView {
   deleted_at: Date | null;
 
   @ViewColumn()
-  supplier_id: number;
+  supplier_id: number | null;
 
   @ViewColumn()
-  supplier_name: string;
+  supplier_name: string | null;
 
   @IsOptional()
   @ValidateNested()
