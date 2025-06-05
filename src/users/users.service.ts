@@ -24,7 +24,7 @@ interface Filters {
     startDate: string;
     endDate: string;
   };
-  is_active?: boolean;
+  is_active?: boolean | 'pending';
   status?: 'pending',
 }
 @Injectable()
@@ -235,12 +235,13 @@ async findOneActive(user_id: number): Promise<User | null> {
     query.andWhere('LOWER(user.email) LIKE LOWER(:email)', { email: `%${filters.email}%` });
   }
 
-  if (filters.status === 'pending') {
-    query.andWhere('user.is_active = false');
-    query.andWhere('user.activation_token IS NOT NULL');
-  } else if (filters.is_active !== undefined) {
-    query.andWhere('user.is_active = :isActive', { isActive: filters.is_active });
-  }
+  if (filters.status === 'pending' || filters.is_active === 'pending') {
+      query.andWhere('user.is_active = false');
+      query.andWhere('user.activation_token IS NOT NULL');
+    } else if (typeof filters.is_active === 'boolean') {
+      query.andWhere('user.is_active = :isActive', { isActive: filters.is_active });
+    }
+
 
 
   if (filters.dateFilter) {
