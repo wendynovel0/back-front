@@ -14,6 +14,15 @@ export class UsersView {
   @ViewColumn()
   is_active: boolean;
 
+  @ViewColumn()
+  activated_at?: Date;
+
+  @ViewColumn()
+  deleted_at?: Date;
+
+  @ViewColumn()
+  activation_token?: string;
+
   @IsOptional()
   @ValidateNested()
   @Type(() => DateRangeFilterDto)

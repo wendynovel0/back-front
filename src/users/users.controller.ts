@@ -111,10 +111,14 @@ async findAllWithFilters(
   const records = await this.userService.findAllWithFilters(filters);
 
   return records.map(user => ({
-    user_id: user.user_id,
-    email: user.email,
-    is_active: user.is_active,
-  }));
+  user_id: user.user_id,
+  email: user.email,
+  is_active: user.is_active,
+  activation_token: user.activation_token,
+  activated_at: user.activated_at,
+  deleted_at: user.deleted_at,
+}));
+
 }
 
  @Get(':id')
