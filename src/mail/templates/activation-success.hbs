@@ -1,94 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Activación Exitosa - Hoken</title>
-    <style type="text/css">
-        body {
-            font-family: Arial, Helvetica, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f5f5f5;
-            color: #333333;
-        }
-        .container {
-            max-width: 600px;
-            margin: 20px auto;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        .header {
-            background-color: #2A3E4C;
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        .content {
-            color: #00AEEF;
-            padding: 30px;
-            text-align: center;
-        }
-        .success-message {
-            color: #000000;
-            font-size: 24px;
-            margin-bottom: 25px;
-        }
-        .button {
-            display: inline-block;
-            background-color: #2A3E4C;
-            color: #00AEEF;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 5px;
-            font-weight: bold;
-            margin: 15px 0;
-        }
-        .button:hover {
-            background-color: #1E2B37;
-        }
-        .footer {
-            padding: 20px;
-            text-align: center;
-            font-size: 12px;
-            color: #777777;
-            background-color: #f9f9f9;
-        }
-        .url-alternative {
-            word-break: break-all;
-            color: #000000;
-            font-size: 14px;
-            margin: 15px 0;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>Cuenta Activada - Hoken</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9fafb;
+      color: #2A3E4C;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      text-align: center;
+    }
+    h2 {
+      font-weight: 700;
+      margin-bottom: 12px;
+      font-size: 2rem;
+    }
+    p {
+      font-size: 1.1rem;
+      margin: 8px 0;
+      max-width: 320px;
+      line-height: 1.4;
+    }
+    .button {
+      margin-top: 24px;
+      background-color: #2A3E4C;
+      color: #00AEEF;
+      padding: 14px 28px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 1.1rem;
+      text-decoration: none;
+      transition: background-color 0.3s ease;
+      display: inline-block;
+    }
+    .button:hover {
+      background-color: #1f2c36;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>¡Activación Exitosa!</h1>
-        </div>
-        
-        <div class="content">
-            <div class="success-message">¡Tu cuenta en Hoken ha sido activada!</div>
-            
-            <p>Ahora puedes acceder a tu cuenta:</p>
-            
-            <div>
-                <a href="http://localhost:5173/login" class="button">
-                    Iniciar Sesión
-                </a>
-            </div>
-            
-            <p class="url-alternative">
-                O visita: http://localhost:5173/login
-            </p>
-        </div>
-        
-        <div class="footer">
-            <p>Si no reconoces esta actividad, por favor contacta a nuestro soporte.</p>
-        </div>
-    </div>
+  <h2>¡Cuenta activada con éxito!</h2>
+  <p>Ahora puedes iniciar sesión en Hoken.</p>
+  <a href="https://back-4vmo.onrender.com/api#/Auth/AuthController_login" class="button" target="_blank" rel="noopener">Acceder a login</a>
+  <p>Gracias por unirte a nosotros.</p>
+  <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
+  <p>Saludos,<br>El equipo de Hoken</p>
 </body>
 </html>
+{{! Este es para la confirmación de cuenta, no para la activación. }}
