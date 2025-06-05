@@ -13,7 +13,8 @@ import {
   Res,
   Inject,
   Redirect,
-  Query
+  Query,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -96,28 +97,29 @@ export class AuthController {
 }
 
   @Get('confirm-email')
-async confirmEmail(@Query('token') token: string, @Res() res: Response) {
+async confirmEmail(@Query('token') token: string) {
   if (!token) {
-    return res.status(400).send('Token no proporcionado');
+    throw new BadRequestException('Token no proporcionado');
   }
 
   try {
     const result = await this.authService.confirmEmail(token);
 
     if (result === 'alreadyConfirmed') {
-      return res.sendFile(join(__dirname, '..', 'public', 'account-already-confirmed.html'));
+      return { status: 'alreadyConfirmed' };
     }
 
     if (result === 'confirmed') {
-      return res.sendFile(join(__dirname, '..', 'public', 'account-confirmed.html'));
+      return { status: 'confirmed' };
     }
 
-    return res.sendFile(join(__dirname, '..', 'public', 'activation-error.html'));
+    return { status: 'error' };
   } catch (error) {
     console.error('confirmEmail error:', error);
-    return res.sendFile(join(__dirname, '..', 'public', 'activation-error.html'));
+    throw new InternalServerErrorException('Error al confirmar el correo');
   }
 }
+
 
 
   @Post('login')
