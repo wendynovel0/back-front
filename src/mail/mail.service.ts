@@ -70,14 +70,14 @@ export class MailService {
       await this.mailerService.sendMail({
         from: this.mailFrom,
         to: email,
-        subject: `¡Bienvenido a Hoken - Cuenta activada!`,
+        subject: `¡Bienvenido a TiendApi - Cuenta activada!`,
         template: 'activation-success',
         context: {
           email,
           frontendUrl,
           backendUrl,
           loginUrl: `${frontendUrl}/login`,
-          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com'),
+          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@tiendapi.com'),
         },
       });
       this.logger.log(`Correo de bienvenida enviado a ${email}`);

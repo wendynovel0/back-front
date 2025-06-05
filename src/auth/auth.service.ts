@@ -239,7 +239,7 @@ async confirmAccount(token: string): Promise<string> {
   
 }
 
-async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed'> {
+async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed' | 'expired' | 'error'> {
   try {
     const decoded = this.jwtService.verify(token, {
       secret: this.configService.get('JWT_ACTIVATION_SECRET')
@@ -271,11 +271,11 @@ async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed'> {
     return 'confirmed';
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      throw new BadRequestException('El enlace de confirmación ha expirado');
+      return 'expired';
     }
 
     console.error('confirmEmail error:', error);
-    throw new InternalServerErrorException('Error al confirmar el correo');
+    return 'error';
   }
 }
 
