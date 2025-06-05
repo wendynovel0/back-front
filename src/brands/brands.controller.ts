@@ -30,6 +30,7 @@ import { CurrentUser } from '../auth/decorators/current-user-decorator';
 import { User } from '../users/entities/user.entity';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { BrandView } from './entities/brands-view.entity';
+import { BrandResponseDto } from './dto/response-brand';
 
 @ApiTags('Brands')
 @ApiBearerAuth()
@@ -49,7 +50,7 @@ export class BrandsController {
 @ApiResponse({
   status: 200,
   description: 'Lista filtrada de marcas',
-  type: [BrandView],
+  type: [BrandResponseDto],
 })
 @ApiResponse({ status: 401, description: 'Token inválido o no proporcionado' })
 async findAll(
@@ -60,23 +61,19 @@ async findAll(
   @Query('startDate') startDate?: string,
   @Query('endDate') endDate?: string,
   @CurrentUser() user?: User,
-): Promise<any> {
+): Promise<BrandResponseDto[]> {
   if (!user) {
     throw new UnauthorizedException('Token inválido o usuario no autenticado');
   }
 
-  const supplierIds = supplierIdsRaw
-    ? supplierIdsRaw
-        .split(',')
-        .map((id) => parseInt(id.trim(), 10))
-        .filter((id) => !isNaN(id))
-    : [];
+  const supplierIds = supplierIdsRaw?.split(',')
+    .map((id) => parseInt(id.trim(), 10))
+    .filter((id) => !isNaN(id)) || [];
 
   const dateFilter =
     dateType && startDate && endDate
       ? { dateType, startDate, endDate }
       : undefined;
-
 
   return this.brandsService.findAllWithFilters({
     search,
@@ -85,8 +82,6 @@ async findAll(
     dateFilter,
   });
 }
-
-
 
   // @Get('search')
   // @ApiOperation({ summary: 'Buscar marcas de TI con filtros avanzados' })
