@@ -206,6 +206,8 @@ async findAllWithFilters(filters: {
   description: brand.description,
   supplier_id: brand.supplier_id,
   supplier_name: brand.supplier_name,
+  created_at: brand.created_at,
+  is_active: brand.brand_is_active,
 }));
 return response;
 
