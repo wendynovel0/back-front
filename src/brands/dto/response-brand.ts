@@ -4,4 +4,5 @@ export class BrandResponseDto {
   description: string;
   supplier_id: number | null;
   supplier_name: string | null;
+  is_active: boolean;
 }
