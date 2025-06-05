@@ -149,7 +149,7 @@ async activate(id: number, performedBy: number, ip?: string): Promise<Brand> {
 
 async findAllWithFilters(filters: {
   search?: string;
-  isActive?: boolean | 'pending';
+  isActive?: boolean;
   supplierIds?: number[];
   dateFilter?: DateRangeFilterDto;
 }): Promise<any> {
@@ -167,15 +167,7 @@ async findAllWithFilters(filters: {
   }
 
   if (filters.isActive !== undefined) {
-    if (filters.isActive === 'pending') {
-      // Usuarios con token de activación, sin activación y no eliminados
-      query.andWhere('user.activation_token IS NOT NULL');
-      query.andWhere('user.activated_at IS NULL');
-      query.andWhere('user.deleted_at IS NULL');
-    } else {
-      // Activos o inactivos normales
-      query.andWhere('user.is_active = :isActive', { isActive: filters.isActive });
-    }
+    query.andWhere('brand.brand_is_active = :isActive', { isActive: filters.isActive });
   }
 
   if (filters.supplierIds?.length) {

@@ -95,18 +95,26 @@ async findAllWithFilters(
     dateFilter = { dateType, startDate, endDate };
   }
 
-  // Convertir isActive string a boolean o undefined
-  const isActiveLower = isActive?.toLowerCase();
-  const isActiveBoolean =
-    isActiveLower === 'true' ? true :
-    isActiveLower === 'false' ? false :
-    undefined;
+  let isActiveFilter: boolean | 'pending' | undefined;
 
-  const filters: Filters = {
-    email,
-    is_active: isActiveBoolean,
-    dateFilter,
-  };
+    const isActiveLower = isActive?.toLowerCase();
+
+    if (isActiveLower === 'true') {
+      isActiveFilter = true;
+    } else if (isActiveLower === 'false') {
+      isActiveFilter = false;
+    } else if (isActiveLower === 'pending') {
+      isActiveFilter = 'pending';
+    } else {
+      isActiveFilter = undefined;
+    }
+
+    const filters: Filters = {
+      email,
+      is_active: isActiveFilter,
+      dateFilter,
+    };
+
 
   const records = await this.userService.findAllWithFilters(filters);
 
