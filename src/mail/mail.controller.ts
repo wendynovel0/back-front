@@ -9,7 +9,7 @@ export class MailController {
     private readonly configService: ConfigService,
     
   ) {}
-
+/*
   @Get('test')
   async testEmail() {
     try {
@@ -34,5 +34,5 @@ export class MailController {
         error: error.message,
       };
     }
-  }
+}*/
 }

@@ -6,7 +6,8 @@ import {
   Inject,
   forwardRef,
   ForbiddenException,
-  BadRequestException
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -25,11 +26,15 @@ import { formatResponse } from 'src/common/utils/response-format';
 import { ActionLogsService } from 'src/action-logs/action-logs.service';
 import { ConfigService } from '@nestjs/config';
 import { RecaptchaService } from 'src/recaptcha/recaptcha.service';
+import { Logger } from '@nestjs/common';
+
 
 
 @Injectable()
 export class AuthService {
   private readonly SALT_ROUNDS = 12;
+  private readonly logger = new Logger(AuthService.name);
+
 
   constructor(
   @Inject(forwardRef(() => UserService))
@@ -233,6 +238,43 @@ async confirmAccount(token: string): Promise<string> {
   }
   
 }
+
+async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed'> {
+  try {
+    const decoded = this.jwtService.verify(token, {
+      secret: this.configService.get('JWT_ACTIVATION_SECRET')
+    });
+
+    const user = await this.usersService.findByEmail(decoded.email);
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+
+    if (user.is_active) {
+      this.logger.warn(`El usuario ${user.email} ya estaba activado`);
+      return 'alreadyConfirmed'; 
+    }
+
+    await this.usersService.update(
+      user.user_id,
+      {
+        is_active: true,
+        activation_token: null,
+        activated_at: new Date(),
+      },
+      user.user_id 
+    );
+
+    await this.mailService.sendActivationSuccessEmail(user.email);
+
+    return 'confirmed'; 
+
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      throw new BadRequestException('El enlace de confirmación ha expirado');
+    }
+    throw new BadRequestException('Token de activación inválido');
+  }
+}
+
 
   private async validateUser(email: string, password: string): Promise<User> {
     const user = await this.usersService.findByEmailWithPassword(email);

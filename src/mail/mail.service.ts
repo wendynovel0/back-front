@@ -15,23 +15,21 @@ export class MailService {
   }
 
   async sendConfirmationEmail(email: string, token: string): Promise<void> {
-    const frontendUrl = this.configService.get('FRONTEND_URL');
-    const activationUrl = `${frontendUrl}/auth/confirm-email?token=${encodeURIComponent(token)}`;
-    const appName = this.configService.get('APP_NAME', 'Hoken');
+    const backendUrl = this.configService.get('BACKEND_URL');
+    const activationUrl = `${backendUrl}/auth/confirm-email?token=${encodeURIComponent(token)}`;
 
     try {
       await this.mailerService.sendMail({
         from: this.mailFrom,
         to: email,
-        subject: `Activa tu cuenta en ${appName}`,
+        subject: `Activa tu cuenta en Hoken`,
         template: 'confirmation',
         context: {
           email,
-          confirmUrl: activationUrl,
-          appName,
-          frontendUrl,
-          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com')
-        }
+          activationUrl,
+          backendUrl,
+          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com'),
+        },
       });
       this.logger.log(`Correo de activación enviado a ${email}`);
     } catch (error) {
@@ -43,20 +41,18 @@ export class MailService {
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
     const frontendUrl = this.configService.get('FRONTEND_URL');
     const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
-    const appName = this.configService.get('APP_NAME', 'Hoken');
 
     try {
       await this.mailerService.sendMail({
         from: this.mailFrom,
         to: email,
-        subject: `Restablece tu contraseña en ${appName}`,
+        subject: `Restablece tu contraseña en Hoken`,
         template: 'password-reset',
         context: {
           email,
           resetUrl,
-          appName,
-          expirationHours: 24
-        }
+          expirationHours: 24,
+        },
       });
       this.logger.log(`Correo de restablecimiento enviado a ${email}`);
     } catch (error) {
@@ -67,26 +63,25 @@ export class MailService {
 
   async sendActivationSuccessEmail(email: string): Promise<void> {
     const frontendUrl = this.configService.get('FRONTEND_URL');
-    const appName = this.configService.get('APP_NAME', 'Hoken');
+    const backendUrl = this.configService.get('BACKEND_URL');
 
     try {
       await this.mailerService.sendMail({
         from: this.mailFrom,
         to: email,
-        subject: `¡Bienvenido a ${appName} - Cuenta activada!`,
+        subject: `¡Bienvenido a Hoken - Cuenta activada!`,
         template: 'activation-success',
         context: {
           email,
           frontendUrl,
-          appName,
-          loginUrl: `${frontendUrl}`,
-          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com')
-        }
+          backendUrl,
+          loginUrl: `${frontendUrl}/login`,
+          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com'),
+        },
       });
       this.logger.log(`Correo de bienvenida enviado a ${email}`);
     } catch (error) {
       this.logger.error(`Error enviando correo de bienvenida a ${email}: ${error.message}`, error.stack);
-      // No lanzamos error para no afectar el flujo principal
     }
   }
 }
