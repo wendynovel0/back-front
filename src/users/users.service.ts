@@ -24,7 +24,7 @@ interface Filters {
     startDate: string;
     endDate: string;
   };
-  is_active?: boolean;
+  is_active?: boolean | 'pending';
 }
 @Injectable()
 export class UserService {
@@ -235,7 +235,13 @@ async findOneActive(user_id: number): Promise<User | null> {
   }
 
   if (filters.is_active !== undefined) {
-    query.andWhere('user.is_active = :isActive', { isActive: filters.is_active });
+    if (filters.is_active === 'pending') {
+      query.andWhere('user.activation_token IS NOT NULL');
+      query.andWhere('user.activated_at IS NULL');
+      query.andWhere('user.deleted_at IS NULL');
+    } else {
+      query.andWhere('user.is_active = :isActive', { isActive: filters.is_active });
+    }
   }
 
   if (filters.dateFilter) {
