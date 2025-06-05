@@ -253,20 +253,28 @@ async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed'> {
       return 'alreadyConfirmed';
     }
 
+    console.log('Activando cuenta para:', user.email);
     await this.usersService.update(user.user_id, {
       is_active: true,
       activation_token: null,
       activated_at: new Date(),
     }, user.user_id);
+    console.log('Cuenta activada, enviando correo');
 
-    await this.mailService.sendActivationSuccessEmail(user.email);
+
+    try {
+      await this.mailService.sendActivationSuccessEmail(user.email);
+    } catch (emailError) {
+      this.logger.warn(`No se pudo enviar el correo de éxito a ${user.email}: ${emailError.message}`);
+    }
+    console.log('Correo de confirmación enviado');
     return 'confirmed';
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       throw new BadRequestException('El enlace de confirmación ha expirado');
     }
 
-    console.error('confirmEmail error:', error); // 👀 Aquí imprime el error
+    console.error('confirmEmail error:', error);
     throw new InternalServerErrorException('Error al confirmar el correo');
   }
 }
