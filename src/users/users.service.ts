@@ -25,7 +25,7 @@ interface Filters {
     endDate: string;
   };
   is_active?: boolean;
-  status: 'pending',
+  status?: 'pending',
 }
 @Injectable()
 export class UserService {
