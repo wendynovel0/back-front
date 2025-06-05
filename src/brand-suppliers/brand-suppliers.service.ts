@@ -86,7 +86,7 @@ export class BrandSuppliersService {
     query.andWhere('supplier.supplier_is_active = :isActive', { isActive });
   }
 
-  return query.orderBy('supplier.created_at', 'DESC').getMany();
+  return query.orderBy('"supplier"."created_at"', 'DESC').getMany();
 }
 
 
