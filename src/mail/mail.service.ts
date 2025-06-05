@@ -79,7 +79,7 @@ export class MailService {
           email,
           frontendUrl,
           appName,
-          loginUrl: `${frontendUrl}/login`,
+          loginUrl: `${frontendUrl}`,
           supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com')
         }
       });
