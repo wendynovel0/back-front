@@ -15,8 +15,9 @@ export class MailService {
   }
 
   async sendConfirmationEmail(email: string, token: string): Promise<void> {
-    const backendUrl = this.configService.get('BACKEND_URL');
-    const activationUrl = `${backendUrl}/auth/confirm-email?token=${encodeURIComponent(token)}`;
+    const frontendUrl = this.configService.get('FRONTEND_URL');
+    const activationUrl = `${frontendUrl}/auth/confirm-email?token=${encodeURIComponent(token)}`;
+
 
     try {
       await this.mailerService.sendMail({
@@ -27,7 +28,7 @@ export class MailService {
         context: {
           email,
           activationUrl,
-          backendUrl,
+          frontendUrl,
           supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com'),
         },
       });
