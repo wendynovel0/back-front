@@ -95,23 +95,22 @@ async findAllWithFilters(
     dateFilter = { dateType, startDate, endDate };
   }
 
-  let isActiveFilter: boolean | 'pending' | undefined;
-
-    const isActiveLower = isActive?.toLowerCase();
+  const isActiveLower = isActive?.toLowerCase();
+  let isActiveBoolean: boolean | undefined;
+  let status: 'pending' | undefined;
 
     if (isActiveLower === 'true') {
-      isActiveFilter = true;
+      isActiveBoolean = true;
     } else if (isActiveLower === 'false') {
-      isActiveFilter = false;
+      isActiveBoolean = false;
     } else if (isActiveLower === 'pending') {
-      isActiveFilter = 'pending';
-    } else {
-      isActiveFilter = undefined;
+      status = 'pending';
     }
 
     const filters: Filters = {
       email,
-      is_active: isActiveFilter,
+      is_active: isActiveBoolean,
+      status,
       dateFilter,
     };
 
