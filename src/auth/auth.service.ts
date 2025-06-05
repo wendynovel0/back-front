@@ -241,19 +241,36 @@ async confirmAccount(token: string): Promise<string> {
 
 async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed'> {
   try {
-    const user = await this.usersService.activateUserByToken(token);
+    const decoded = this.jwtService.verify(token, {
+      secret: this.configService.get('JWT_ACTIVATION_SECRET')
+    });
+
+    const user = await this.usersService.findByActivationToken(token); // ⚠️ Este método debe existir
+    if (!user) throw new NotFoundException('Token inválido o cuenta ya activada');
+
+    if (user.is_active) {
+      this.logger.warn(`El usuario ${user.email} ya estaba activado`);
+      return 'alreadyConfirmed';
+    }
+
+    await this.usersService.update(user.user_id, {
+      is_active: true,
+      activation_token: null,
+      activated_at: new Date(),
+    }, user.user_id);
 
     await this.mailService.sendActivationSuccessEmail(user.email);
     return 'confirmed';
-
   } catch (error) {
-    if (error instanceof NotFoundException) {
-      throw new BadRequestException('El enlace no es válido, ha expirado o ya fue usado.');
+    if (error.name === 'TokenExpiredError') {
+      throw new BadRequestException('El enlace de confirmación ha expirado');
     }
 
+    console.error('confirmEmail error:', error); // 👀 Aquí imprime el error
     throw new InternalServerErrorException('Error al confirmar el correo');
   }
 }
+
 
 
   private async validateUser(email: string, password: string): Promise<User> {
