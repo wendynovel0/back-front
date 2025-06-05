@@ -198,7 +198,7 @@ async findAllWithFilters(filters: {
     applyDateRangeFilter(query, 'brand', { dateType, startDate, endDate });
   }
 
-  const brands = await query.orderBy('brand.created_at', 'DESC').getMany();
+  const brands = await query.orderBy('"brand"."created_at"', 'DESC').getMany();
 
   const response: BrandResponseDto[] = brands.map((brand) => ({
   brand_id: brand.brand_id,
