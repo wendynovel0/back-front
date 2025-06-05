@@ -46,7 +46,7 @@ export class AuthService {
   @Inject(forwardRef(() => ActionLogsService))
   private readonly actionLogsService: ActionLogsService,
   private readonly configService: ConfigService, 
-      private readonly recaptchaService: RecaptchaService, 
+  private readonly recaptchaService: RecaptchaService, 
 
 ) {}
   
@@ -241,18 +241,21 @@ async confirmAccount(token: string): Promise<string> {
 
 async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed'> {
   try {
+    // Verifica que el token sea válido (estructura, expiración, etc.)
     const decoded = this.jwtService.verify(token, {
-      secret: this.configService.get('JWT_ACTIVATION_SECRET')
+      secret: this.configService.get('JWT_ACTIVATION_SECRET'),
     });
 
-    const user = await this.usersService.findByEmail(decoded.email);
-    if (!user) throw new NotFoundException('Usuario no encontrado');
+    // Busca al usuario por el token en la base
+    const user = await this.usersService.findByActivationToken(token);
+    if (!user) throw new NotFoundException('Token inválido o usuario no encontrado');
 
     if (user.is_active) {
       this.logger.warn(`El usuario ${user.email} ya estaba activado`);
-      return 'alreadyConfirmed'; 
+      return 'alreadyConfirmed';
     }
 
+    // Actualiza al usuario como activo
     await this.usersService.update(
       user.user_id,
       {
@@ -260,20 +263,23 @@ async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed'> {
         activation_token: null,
         activated_at: new Date(),
       },
-      user.user_id 
+      user.user_id
     );
 
+    // Envío de correo de activación exitosa
     await this.mailService.sendActivationSuccessEmail(user.email);
 
-    return 'confirmed'; 
+    return 'confirmed';
 
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
       throw new BadRequestException('El enlace de confirmación ha expirado');
     }
+
     throw new BadRequestException('Token de activación inválido');
   }
 }
+
 
 
   private async validateUser(email: string, password: string): Promise<User> {
