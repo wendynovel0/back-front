@@ -9,6 +9,7 @@ import { UpdateBrandDto } from './dto/update-brand.dto';
 import { formatResponse } from '../common/utils/response-format';
 import { DateRangeFilterDto } from '../common/dto/date-range-filter.dto';
 import { applyDateRangeFilter } from '../common/utils/query.utils'; 
+import { BrandResponseDto } from './dto/response-brand';
 
 @Injectable()
 export class BrandService {
@@ -199,16 +200,15 @@ async findAllWithFilters(filters: {
 
   const brands = await query.orderBy('brand.created_at', 'DESC').getMany();
 
-  const response = brands.map((brand) => ({
-    brand_id: brand.brand_id,
-    brand_name: brand.brand_name,
-    description: brand.description,
-    supplier_id: brand.supplier_id,
-    supplier_name: brand.supplier_name,
-    // No created_at ni updated_at
-  }));
+  const response: BrandResponseDto[] = brands.map((brand) => ({
+  brand_id: brand.brand_id,
+  brand_name: brand.brand_name,
+  description: brand.description,
+  supplier_id: brand.supplier_id,
+  supplier_name: brand.supplier_name,
+}));
+return response;
 
-  return response;
 }
 
 // Método para obtener una vista mínima de la marca como nos dijo Russel
