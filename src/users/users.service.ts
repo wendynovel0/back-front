@@ -25,7 +25,7 @@ interface Filters {
     endDate: string;
   };
   is_active?: boolean | 'pending';
-  status?: 'pending',
+  status?: 'pending' | 'active' | 'inactive',
   pending?: boolean,
 }
 @Injectable()
