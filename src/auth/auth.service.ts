@@ -239,45 +239,49 @@ async confirmAccount(token: string): Promise<string> {
   
 }
 
-async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed' | 'expired' | 'error'> {
+
+async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed' | 'error'> {
   try {
     const decoded = this.jwtService.verify(token, {
-      secret: this.configService.get('JWT_ACTIVATION_SECRET')
+      secret: this.configService.get('JWT_ACTIVATION_SECRET'),
     });
 
-    const user = await this.usersService.findByActivationToken(token); // ⚠️ Este método debe existir
-    if (!user) throw new NotFoundException('Token inválido o cuenta ya activada');
+    const user = await this.usersService.findByActivationToken(token);
+    if (!user) {
+      this.logger.warn(`Token no corresponde a ningún usuario: ${token}`);
+      return 'error';
+    }
 
     if (user.is_active) {
       this.logger.warn(`El usuario ${user.email} ya estaba activado`);
       return 'alreadyConfirmed';
     }
 
-    console.log('Activando cuenta para:', user.email);
-    await this.usersService.update(user.user_id, {
-      is_active: true,
-      activation_token: null,
-      activated_at: new Date(),
-    }, user.user_id);
-    console.log('Cuenta activada, enviando correo');
-
+    this.logger.log(`Activando cuenta para: ${user.email}`);
+    await this.usersService.update(
+      user.user_id,
+      {
+        is_active: true,
+        activation_token: null,
+        activated_at: new Date(),
+      },
+      user.user_id
+    );
 
     try {
       await this.mailService.sendActivationSuccessEmail(user.email);
     } catch (emailError) {
       this.logger.warn(`No se pudo enviar el correo de éxito a ${user.email}: ${emailError.message}`);
     }
-    console.log('Correo de confirmación enviado');
-    return 'confirmed';
-  } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      return 'expired';
-    }
 
-    console.error('confirmEmail error:', error);
+    this.logger.log('Cuenta activada y correo enviado');
+    return 'confirmed';
+  } catch (err) {
+    this.logger.error(`Error confirmando email: ${err.message}`, err.stack);
     return 'error';
   }
 }
+
 
 
 
