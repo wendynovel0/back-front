@@ -94,8 +94,6 @@ export class UserService {
   };
 }
 
-
-
  async replace(
   id: number,
   replaceUserDto: ReplaceUserDto,
@@ -109,13 +107,17 @@ export class UserService {
     throw new BadRequestException('El email es obligatorio');
   }
 
-  // Copiamos los datos recibidos
-  const updatedData: Partial<User> = { ...replaceUserDto };
+  // Creamos el objeto updatedData sin la contraseña aún
+  const { password_hash, ...rest } = replaceUserDto;
+  const updatedData: Partial<User> = { ...rest };
 
-  // Hasheo si hay password
-  if (replaceUserDto.password_hash) {
+  // Solo si password_hash viene y no está vacío, hacemos hash y actualizamos
+  if (password_hash && password_hash.trim() !== '') {
     const saltRounds = 10;
-    updatedData.password_hash = await bcrypt.hash(replaceUserDto.password_hash, saltRounds);
+    updatedData.password_hash = await bcrypt.hash(password_hash, saltRounds);
+  } else {
+    // Si no viene la contraseña, la mantenemos igual (no hacer nada)
+    // Así no se toca la contraseña actual
   }
 
   if ('deleted_at' in updatedData) {
@@ -143,6 +145,7 @@ export class UserService {
 
   return replacedUser;
 }
+
   
  async update(
   id: number,
