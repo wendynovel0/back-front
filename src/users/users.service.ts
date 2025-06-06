@@ -101,23 +101,25 @@ export class UserService {
   ip?: string,
 ): Promise<User> {
   const user = await this.findOneActive(id);
+  if (!user) {
+  throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
+}
   const oldValue = { ...user };
 
   if (!replaceUserDto.email || replaceUserDto.email.trim() === '') {
     throw new BadRequestException('El email es obligatorio');
   }
 
-  // Creamos el objeto updatedData sin la contraseña aún
-  const { password_hash, ...rest } = replaceUserDto;
-  const updatedData: Partial<User> = { ...rest };
+  // Copiamos los datos recibidos
+  const updatedData: Partial<User> = { ...replaceUserDto };
 
-  // Solo si password_hash viene y no está vacío, hacemos hash y actualizamos
-  if (password_hash && password_hash.trim() !== '') {
+  // Si el DTO NO tiene password_hash o viene vacío, dejamos la contraseña original
+  if (replaceUserDto.password_hash && replaceUserDto.password_hash.trim() !== '') {
     const saltRounds = 10;
-    updatedData.password_hash = await bcrypt.hash(password_hash, saltRounds);
+    updatedData.password_hash = await bcrypt.hash(replaceUserDto.password_hash, saltRounds);
   } else {
-    // Si no viene la contraseña, la mantenemos igual (no hacer nada)
-    // Así no se toca la contraseña actual
+    // No actualiza password_hash, conservar la original
+    updatedData.password_hash = user.password_hash;
   }
 
   if ('deleted_at' in updatedData) {
@@ -126,12 +128,11 @@ export class UserService {
     }
   }
 
-  const newUser = this.userRepository.create({
+  // No usar create, directamente save la entidad actualizada
+  const replacedUser = await this.userRepository.save({
     ...user,
     ...updatedData,
   });
-
-  const replacedUser = await this.userRepository.save(newUser);
 
   await this.actionLogsService.logAction({
     userId: performedBy,
