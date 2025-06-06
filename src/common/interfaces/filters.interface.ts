@@ -6,5 +6,5 @@ export interface Filters {
     endDate: string;
   };
   is_active?: boolean;
-  status?: 'pending' | 'active' | 'inactive',
+  status?: 'pending',
 }

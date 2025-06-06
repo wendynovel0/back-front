@@ -57,20 +57,20 @@ export class UserController {
   @Get()
 @ApiOperation({
   summary: 'Buscar usuarios con filtros combinados',
-  description: 'Permite buscar usuarios por email, estado y fechas de creación/actualización',
+  description: 'Permite buscar usuarios por email, estado activo y fechas de creación/actualización',
 })
 @ApiQuery({ name: 'email', required: false, description: 'Filtrar por email (búsqueda parcial)', example: 'ejemplo@correo.com' })
 @ApiQuery({ name: 'dateType', required: false, enum: ['created_at', 'updated_at', 'deleted_at'] })
 @ApiQuery({ name: 'startDate', required: false })
 @ApiQuery({ name: 'endDate', required: false })
-@ApiQuery({ name: 'status', required: false, enum: ['pending', 'active', 'inactive'], description: 'Estado del usuario' }) // ✅ NUEVO
+@ApiQuery({ name: 'isActive', required: false, description: 'Filtrar por estado activo (true/false)', example: true })
 @ApiResponse({ status: 200, description: 'Lista de usuarios encontrados', type: [UsersView] })
 async findAllWithFilters(
   @Query('email') email?: string,
   @Query('dateType') dateType?: 'created_at' | 'updated_at' | 'deleted_at',
   @Query('startDate') startDate?: string,
   @Query('endDate') endDate?: string,
-  @Query('status') status?: 'pending' | 'active' | 'inactive', // ✅ NUEVO
+  @Query('isActive') isActive?: string,
   @CurrentUser() user?: any,
 ) {
   if (!user) {
@@ -79,7 +79,7 @@ async findAllWithFilters(
 
   let dateFilter: Filters['dateFilter'] = undefined;
 
-  // Validación de fechas
+  // Validaciones para filtro de fechas único
   if ((dateType || startDate || endDate) && !(dateType && startDate && endDate)) {
     throw new BadRequestException('Debe proporcionar dateType, startDate y endDate para filtrar por fecha');
   }
@@ -95,24 +95,38 @@ async findAllWithFilters(
     dateFilter = { dateType, startDate, endDate };
   }
 
-  const filters: Filters = {
-    email,
-    status,     // ✅ usar directamente el status como string
-    dateFilter,
-  };
+  const isActiveLower = isActive?.toLowerCase();
+  let isActiveBoolean: boolean | undefined;
+  let status: 'pending' | undefined;
+
+    if (isActiveLower === 'true') {
+      isActiveBoolean = true;
+    } else if (isActiveLower === 'false') {
+      isActiveBoolean = false;
+    } else if (isActiveLower === 'pending') {
+      status = 'pending';
+    }
+
+    const filters: Filters = {
+      email,
+      is_active: isActiveBoolean,
+      status,
+      dateFilter,
+    };
+
 
   const records = await this.userService.findAllWithFilters(filters);
 
   return records.map(user => ({
-    user_id: user.user_id,
-    email: user.email,
-    is_active: user.is_active,
-    activation_token: user.activation_token,
-    activated_at: user.activated_at,
-    deleted_at: user.deleted_at,
-  }));
-}
+  user_id: user.user_id,
+  email: user.email,
+  is_active: user.is_active,
+  activation_token: user.activation_token,
+  activated_at: user.activated_at,
+  deleted_at: user.deleted_at,
+}));
 
+}
 
  @Get(':id')
 @ApiOkResponse({ description: 'Usuario obtenido correctamente' })
