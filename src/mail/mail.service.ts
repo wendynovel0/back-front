@@ -23,7 +23,7 @@ export class MailService {
       await this.mailerService.sendMail({
         from: this.mailFrom,
         to: email,
-        subject: `Activa tu cuenta en Hoken`,
+        subject: `Activa tu cuenta en TiendApi`,
         template: 'confirmation',
         context: {
           email,
