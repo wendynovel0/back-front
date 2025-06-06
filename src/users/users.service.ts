@@ -94,13 +94,29 @@ export class UserService {
   };
 }
 
+async findOneRaw(id: number): Promise<Partial<User>> {
+  const user = await this.userRepository.findOne({ where: { user_id: id } });
+
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  return {
+    user_id: user.user_id,
+    email: user.email,
+    is_active: user.is_active,
+    password_hash: user.password_hash,
+  };
+}
+
+
  async replace(
   id: number,
   replaceUserDto: ReplaceUserDto,
   performedBy: number,
   ip?: string,
 ): Promise<User> {
-  const user = await this.findOneActive(id);
+  const user = await this.findOneRaw(id);
   if (!user) {
   throw new NotFoundException(`Usuario con ID ${id} no encontrado`);
 }
