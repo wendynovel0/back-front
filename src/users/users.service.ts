@@ -178,7 +178,6 @@ async findOneRaw(id: number): Promise<Partial<User>> {
 
   const oldValue = { ...user };
 
-  // Activar usuario y poner fecha de activación
   user.is_active = true;
   user.activated_at = new Date();
 
@@ -207,7 +206,6 @@ async findOneRaw(id: number): Promise<Partial<User>> {
 
   const oldValue = { ...user };
 
-  // Soft delete: desactivar y poner fecha
   user.is_active = false;
   user.deleted_at = new Date();
 

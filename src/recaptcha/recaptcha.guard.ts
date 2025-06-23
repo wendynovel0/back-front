@@ -1,4 +1,3 @@
-// recaptcha.guard.ts
 import {
   CanActivate,
   ExecutionContext,

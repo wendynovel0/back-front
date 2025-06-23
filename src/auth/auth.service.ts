@@ -27,7 +27,7 @@ import { ActionLogsService } from 'src/action-logs/action-logs.service';
 import { ConfigService } from '@nestjs/config';
 import { RecaptchaService } from 'src/recaptcha/recaptcha.service';
 import { Logger } from '@nestjs/common';
-
+import { Novu } from '@novu/node';
 
 
 @Injectable()
@@ -80,13 +80,31 @@ export class AuthService {
       },
     );
 
-    await this.usersService.create({
+    const newUser = await this.usersService.create({
       email: normalizedEmail,
       password_hash: hashedPassword,
       is_active: false,
       activation_token: activationToken,
     });
 
+    // 👇 NOVU: Crear suscriptor en Novu
+    try {
+      const novuSecretKey = this.configService.get<string>('NOVU_SECRET_KEY');
+      if (!novuSecretKey) {
+        throw new Error('NOVU_SECRET_KEY no está definido en las variables de entorno');
+      }
+
+      const novu = new Novu(novuSecretKey);
+
+      await novu.subscribers.identify(newUser.user_id.toString(), {
+        email: newUser.email,
+      });
+    } catch (novuError) {
+      console.warn('No se pudo registrar en Novu:', novuError.message);
+      // Puedes omitir este error si no quieres que falle el registro
+    }
+
+    // Enviar email de activación
     await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
 
     return {
@@ -98,6 +116,7 @@ export class AuthService {
     throw new InternalServerErrorException('Error al crear el usuario');
   }
 }
+
 
   async login(loginDto: LoginDto): Promise<any> {
   const { email, password, recaptchaToken } = loginDto;
@@ -202,14 +221,13 @@ async isBlacklisted(token: string): Promise<boolean> {
   } else {
     console.log('[isBlacklisted] No encontrado con findOne. Ejecutando query raw para verificar...');
 
-    // Segundo intento: usar query builder para depurar
     const result = await this.blacklistedTokenRepo
       .createQueryBuilder('bt')
       .where('bt.token = :token', { token: cleanedToken })
       .getRawAndEntities();
 
     if (result.raw.length > 0) {
-      console.warn('[isBlacklisted] ⚠️ Token sí está en la base, pero no lo encuentra con findOne.');
+      console.warn('[isBlacklisted]  Token sí está en la base, pero no lo encuentra con findOne.');
       console.log('[isBlacklisted] Raw data:', result.raw);
       return true;
     }
@@ -238,7 +256,6 @@ async confirmAccount(token: string): Promise<string> {
   }
   
 }
-
 
 async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed' | 'error'> {
   try {
@@ -274,6 +291,27 @@ async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed' | 'e
       this.logger.warn(`No se pudo enviar el correo de éxito a ${user.email}: ${emailError.message}`);
     }
 
+    try {
+      const novuSecretKey = this.configService.get<string>('NOVU_SECRET_KEY');
+      if (!novuSecretKey) {
+        throw new Error('NOVU_SECRET_KEY no está definido');
+      }
+
+      const novu = new Novu(novuSecretKey);
+      await novu.trigger('usuario-activo', {
+        to: {
+          subscriberId: user.user_id.toString(), // Convertimos a string como requiere Novu
+        },
+        payload: {
+          email: user.email || '', // o lo que use tu plantilla
+        },
+      });
+
+      this.logger.log(`Notificación push enviada a ${user.email}`);
+    } catch (pushError) {
+      this.logger.warn(`No se pudo enviar notificación push: ${pushError.message}`);
+    }
+
     this.logger.log('Cuenta activada y correo enviado');
     return 'confirmed';
   } catch (err) {
@@ -281,8 +319,6 @@ async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed' | 'e
     return 'error';
   }
 }
-
-
 
 
   private async validateUser(email: string, password: string): Promise<User> {
