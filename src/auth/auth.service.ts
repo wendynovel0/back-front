@@ -145,6 +145,7 @@ export class AuthService {
     return {
       expires_in: expiresIn,
       login_token: token,
+      user_id: user.user_id,
     };
   } catch (error) {
     console.error('Error en login:', error);
