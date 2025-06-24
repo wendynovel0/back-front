@@ -119,8 +119,8 @@ export class AuthService {
 
 
   async login(loginDto: LoginDto): Promise<any> {
-  const { email, password, recaptchaToken } = loginDto;
-    console.log('Login DTO recibido:', loginDto);
+  const { email, password, recaptchaToken, fcmToken } = loginDto;
+  console.log('Login DTO recibido:', loginDto);
 
   try {
     const normalizedEmail = email.toLowerCase().trim();
@@ -133,7 +133,30 @@ export class AuthService {
     };
 
     const token = this.jwtService.sign(payload);
-    const expiresIn = 3600; // 1 hora
+    const expiresIn = 3600;
+
+    console.log('Token FCM recibido:', fcmToken);
+
+    // 🔔 NOVU: Registrar suscriptor y canal push (solo si se recibe FCM token)
+    if (fcmToken) {
+      const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
+
+      // 👤 Asegura que el suscriptor exista
+      await novu.subscribers.identify(user.user_id.toString(), {
+        email: user.email,
+      });
+
+      // 🔗 Registrar token FCM como canal push
+      await novu.subscribers.setCredentials(
+        user.user_id.toString(),      // subscriberId
+        'fcm',                        // providerId
+        {
+          deviceTokens: [fcmToken],  // credentials
+        }
+      );
+
+      console.log('Usuario registrado en Novu con token FCM');
+    }
 
     await this.actionLogsService.logAction({
       userId: user.user_id,
@@ -159,7 +182,6 @@ export class AuthService {
     throw new UnauthorizedException('Email o contraseña incorrectos');
   }
 }
-
 
 async logout(token: string): Promise<any> {
   const normalizedToken = normalizeToken(token);
