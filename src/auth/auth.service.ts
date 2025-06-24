@@ -146,13 +146,13 @@ export class AuthService {
         email: user.email,
       });
 
-      // 🔗 Registrar token FCM como canal push
       await novu.subscribers.setCredentials(
-        user.user_id.toString(),      // subscriberId
-        'fcm',                        // providerId
+        user.user_id.toString(),
+        'fcm',
         {
-          deviceTokens: [fcmToken],  // credentials
-        }
+          deviceTokens: [fcmToken],
+        },
+        undefined // ← Esto es necesario para que no intente interpretar mal el tercer argumento
       );
 
       console.log('Usuario registrado en Novu con token FCM');
