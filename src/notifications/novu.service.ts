@@ -15,15 +15,21 @@ export class NovuService {
     this.novu = new Novu(secretKey);
   }
 
-  async registerSubscriber(userId: string, email: string, firstName: string) {
-    await this.novu.subscribers.identify(userId, { email, firstName });
+  async registerSubscriber(userId: string, email: string) {
+    await this.novu.subscribers.identify(userId, { email });
   }
 
-  async sendConfirmationEmail(userId: string, email: string, firstName: string, confirmationUrl: string) {
-    await this.registerSubscriber(userId, email, firstName);
+  async sendConfirmationEmail(userId: string, email: string, confirmationUrl: string) {
+    await this.registerSubscriber(userId, email);
+
     await this.novu.trigger('confirmar-cuenta', {
       to: { subscriberId: userId },
-      payload: { firstName, confirmationUrl },
+      payload: { 
+        email,  
+        confirmationUrl,
+      },
     });
+
+    this.logger.log(`Correo de confirmación enviado a ${email}`);
   }
 }

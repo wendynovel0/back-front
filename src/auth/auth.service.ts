@@ -89,14 +89,13 @@ export class AuthService {
       activation_token: activationToken,
     });
 
-    // ✅ Usar el NovuService para enviar el correo de confirmación
+    // Usar el NovuService para enviar el correo de confirmación
     try {
       const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/confirmar-cuenta?token=${activationToken}`;
 
       await this.novuService.sendConfirmationEmail(
         newUser.user_id.toString(),
         newUser.email,
-        newUser.email, // Si no usas nombre, puedes pasar el email como "nombre"
         confirmationUrl
       );
 
@@ -114,7 +113,6 @@ export class AuthService {
     throw new InternalServerErrorException('Error al crear el usuario');
   }
 }
-
 
 
   async login(loginDto: LoginDto): Promise<any> {
@@ -322,10 +320,10 @@ async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed' | 'e
       const novu = new Novu(novuSecretKey);
       await novu.trigger('usuario-activo', {
         to: {
-          subscriberId: user.user_id.toString(), // Convertimos a string como requiere Novu
+          subscriberId: user.user_id.toString(),
         },
         payload: {
-          email: user.email || '', // o lo que use tu plantilla
+          email: user.email || '',
         },
       });
 
