@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { NovuService } from '../notifications/novu.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { UserService } from '../users/users.service';
@@ -47,11 +48,12 @@ export class AuthService {
   private readonly actionLogsService: ActionLogsService,
   private readonly configService: ConfigService, 
   private readonly recaptchaService: RecaptchaService, 
+  private readonly novuService: NovuService
 
 ) {}
   
 
-  async register(registerDto: RegisterDto): Promise<any> {
+ async register(registerDto: RegisterDto): Promise<any> {
   const { email, password, recaptchaToken } = registerDto;
 
   if (!email || !password) {
@@ -87,35 +89,32 @@ export class AuthService {
       activation_token: activationToken,
     });
 
-    // 👇 NOVU: Crear suscriptor en Novu
+    // ✅ Usar el NovuService para enviar el correo de confirmación
     try {
-      const novuSecretKey = this.configService.get<string>('NOVU_SECRET_KEY');
-      if (!novuSecretKey) {
-        throw new Error('NOVU_SECRET_KEY no está definido en las variables de entorno');
-      }
+      const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/confirmar-cuenta?token=${activationToken}`;
 
-      const novu = new Novu(novuSecretKey);
+      await this.novuService.sendConfirmationEmail(
+        newUser.user_id.toString(),
+        newUser.email,
+        newUser.email, // Si no usas nombre, puedes pasar el email como "nombre"
+        confirmationUrl
+      );
 
-      await novu.subscribers.identify(newUser.user_id.toString(), {
-        email: newUser.email,
-      });
+      this.logger.log(`Correo de confirmación enviado a ${newUser.email}`);
     } catch (novuError) {
-      console.warn('No se pudo registrar en Novu:', novuError.message);
-      // Puedes omitir este error si no quieres que falle el registro
+      this.logger.warn(`No se pudo enviar el correo con Novu: ${novuError.message}`);
     }
-
-    // Enviar email de activación
-    await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
 
     return {
       success: true,
       message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
     };
   } catch (error) {
-    console.error('Error en registro:', error);
+    this.logger.error('Error en registro:', error);
     throw new InternalServerErrorException('Error al crear el usuario');
   }
 }
+
 
 
   async login(loginDto: LoginDto): Promise<any> {

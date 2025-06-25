@@ -15,6 +15,7 @@ import { UserVerificationService } from 'src/auth/services/user-verification.ser
 import { MailModule } from '../mail/mail.module';
 import { LogsModule } from 'src/action-logs/action-logs.module';
 import { RecaptchaModule } from 'src/recaptcha/recaptcha.module';
+import { NotificationsModule } from '../notifications/notifications.module'; 
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { RecaptchaModule } from 'src/recaptcha/recaptcha.module';
     MailModule, 
     RecaptchaModule,
     ConfigModule, 
+    NotificationsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, UserVerificationService],
