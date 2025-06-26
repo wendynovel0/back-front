@@ -8,12 +8,15 @@ export class NovuService {
   private readonly novu: Novu;
 
   constructor(private readonly configService: ConfigService) {
-    const secretKey = 'b0c256c63c91cc6f586ccb336ffe5f5e';
-    if (!secretKey) {
-      throw new Error('NOVU_SECRET_KEY no está definido en .env');
-    }
-    this.novu = new Novu(secretKey);
+  const secretKey = this.configService.get<string>('NOVU_SECRET_KEY');
+  if (!secretKey) {
+    throw new Error('NOVU_SECRET_KEY no está definido en .env');
   }
+
+  this.novu = new Novu(secretKey);
+  console.log(secretKey)
+  this.logger.log(`🔐 Clave NOVU cargada correctamente`);
+}
 
   async registerSubscriber(userId: string, email: string) {
     await this.novu.subscribers.identify(userId, { email });
