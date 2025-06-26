@@ -70,42 +70,52 @@ export class AuthController {
   }
 
   @Post('fcm')
-  async attachFcmTokenToUser(
-    @Body('userId') userId: number,
-    @Body('fcmToken') fcmToken: string,
-  ) {
-    if (!userId || !fcmToken) {
-      throw new BadRequestException('userId y fcmToken son obligatorios');
-    }
-
-    const user = await this.userService.findOne(userId);
-    if (!user) {
-      throw new NotFoundException('Usuario no encontrado');
-    }
-
-    const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
-
-    // Asegurarse de que el suscriptor exista en Novu
-    await novu.subscribers.identify(userId.toString(), {
-      email: user.email,
-    });
-
-    // Registrar canal FCM
-    await novu.subscribers.setCredentials(
-      userId.toString(),
-      'fcm',
-      {
-        deviceTokens: [fcmToken],
-      },
-      undefined
-    );
-
-    return {
-      success: true,
-      message: 'Token FCM registrado en Novu con éxito.',
-    };
+async attachFcmTokenToUser(
+  @Body('userId') userId: number,
+  @Body('fcmToken') fcmToken: string,
+) {
+  if (!userId || !fcmToken) {
+    throw new BadRequestException('userId y fcmToken son obligatorios');
   }
 
+  const user = await this.userService.findOne(userId);
+  if (!user) {
+    throw new NotFoundException('Usuario no encontrado');
+  }
+
+  const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
+
+  // 🧾 Asegurar que el suscriptor exista
+  await novu.subscribers.identify(userId.toString(), {
+    email: user.email,
+  });
+
+  // 🔗 Registrar token FCM
+  await novu.subscribers.setCredentials(
+    userId.toString(),
+    'fcm',
+    {
+      deviceTokens: [fcmToken],
+    },
+    undefined
+  );
+
+  // 🔔 Disparar notificación al canal push registrado
+  await novu.trigger('usuario-activo', {
+    to: {
+      subscriberId: userId.toString(),
+    },
+    payload: {
+      nombre: user.email, // ajusta según tus necesidades
+      mensaje: '¡Bienvenido/a! Tu canal de notificaciones push está activo.',
+    },
+  });
+
+  return {
+    success: true,
+    message: 'Token FCM registrado en Novu y notificación enviada.',
+  };
+}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
