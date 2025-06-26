@@ -89,27 +89,30 @@ export class AuthService {
       activation_token: activationToken,
     });
 
-    // Usar el NovuService para enviar el correo de confirmación
+    // 👇 NOVU: Crear suscriptor en Novu
     try {
-      const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/confirmar-cuenta?token=${activationToken}`;
+      const novuSecretKey = this.configService.get<string>('NOVU_SECRET_KEY');
+      if (!novuSecretKey) {
+        throw new Error('NOVU_SECRET_KEY no está definido en las variables de entorno');
+      }
 
-      await this.novuService.sendConfirmationEmail(
-        newUser.user_id.toString(),
-        newUser.email,
-        confirmationUrl
-      );
+      const novu = new Novu(novuSecretKey);
 
-      this.logger.log(`Correo de confirmación enviado a ${newUser.email}`);
+      await novu.subscribers.identify(newUser.user_id.toString(), {
+        email: newUser.email,
+      });
     } catch (novuError) {
-      this.logger.warn(`No se pudo enviar el correo con Novu: ${novuError.message}`);
+      console.warn('No se pudo registrar en Novu:', novuError.message);
     }
+
+    await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
 
     return {
       success: true,
       message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
     };
   } catch (error) {
-    this.logger.error('Error en registro:', error);
+    console.error('Error en registro:', error);
     throw new InternalServerErrorException('Error al crear el usuario');
   }
 }
