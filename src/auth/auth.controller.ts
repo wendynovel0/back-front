@@ -15,6 +15,7 @@ import {
   Redirect,
   Query,
   InternalServerErrorException,
+  NotFoundException
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -35,6 +36,8 @@ import { ConfigService } from '@nestjs/config';
 import { MailService } from '../mail/mail.service';
 import { RecaptchaGuard } from 'src/recaptcha/recaptcha.guard';
 import { join } from 'path';
+import { Novu } from '@novu/node';
+
 
 
 @ApiTags('Auth')
@@ -65,6 +68,44 @@ export class AuthController {
     await this.authService.logout(token);
     return { message: 'Sesión cerrada correctamente' };
   }
+
+  @Post('fcm')
+  async attachFcmTokenToUser(
+    @Body('userId') userId: number,
+    @Body('fcmToken') fcmToken: string,
+  ) {
+    if (!userId || !fcmToken) {
+      throw new BadRequestException('userId y fcmToken son obligatorios');
+    }
+
+    const user = await this.userService.findOne(userId);
+    if (!user) {
+      throw new NotFoundException('Usuario no encontrado');
+    }
+
+    const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
+
+    // Asegurarse de que el suscriptor exista en Novu
+    await novu.subscribers.identify(userId.toString(), {
+      email: user.email,
+    });
+
+    // Registrar canal FCM
+    await novu.subscribers.setCredentials(
+      userId.toString(),
+      'fcm',
+      {
+        deviceTokens: [fcmToken],
+      },
+      undefined
+    );
+
+    return {
+      success: true,
+      message: 'Token FCM registrado en Novu con éxito.',
+    };
+  }
+
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
