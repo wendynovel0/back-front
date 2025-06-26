@@ -117,7 +117,7 @@ export class AuthService {
 
   async login(loginDto: LoginDto): Promise<any> {
   const { email, password, recaptchaToken, fcmToken } = loginDto;
-  console.log('Login DTO recibido:', loginDto);
+  console.log('🔐 Login DTO recibido:', loginDto);
 
   try {
     const normalizedEmail = email.toLowerCase().trim();
@@ -132,27 +132,36 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
     const expiresIn = 3600;
 
-    console.log('Token FCM recibido:', fcmToken);
+    console.log('📨 Token FCM recibido:', fcmToken || 'No se recibió');
 
-    // 🔔 NOVU: Registrar suscriptor y canal push (solo si se recibe FCM token)
-    if (fcmToken) {
-      const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
+    // 🔔 NOVU: Registrar suscriptor y canal push (solo si se recibe FCM token válido)
+    if (fcmToken && typeof fcmToken === 'string') {
+      try {
+        const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
 
-      // 👤 Asegura que el suscriptor exista
-      await novu.subscribers.identify(user.user_id.toString(), {
-        email: user.email,
-      });
+        console.log('📣 Registrando suscriptor en Novu...');
+        await novu.subscribers.identify(user.user_id.toString(), {
+          email: user.email,
+        });
 
-      await novu.subscribers.setCredentials(
-        user.user_id.toString(),
-        'fcm',
-        {
-          deviceTokens: [fcmToken],
-        },
-        undefined // ← Esto es necesario para que no intente interpretar mal el tercer argumento
-      );
+        console.log('📲 Asignando canal push FCM...');
+        await novu.subscribers.setCredentials(
+          user.user_id.toString(),
+          'fcm',
+          {
+            deviceTokens: [fcmToken],
+          },
+          undefined // Necesario para evitar interpretación errónea
+        );
 
-      console.log('Usuario registrado en Novu con token FCM');
+        console.log('✅ Usuario registrado en Novu con canal FCM');
+      } catch (novuErr) {
+        console.error(
+          '❌ Error al registrar en Novu:',
+          novuErr?.response?.data || novuErr.message || novuErr
+        );
+        // Nota: puedes decidir lanzar o solo loguear sin afectar el login
+      }
     }
 
     await this.actionLogsService.logAction({
@@ -168,7 +177,7 @@ export class AuthService {
       user_id: user.user_id,
     };
   } catch (error) {
-    console.error('Error en login:', error);
+    console.error('💥 Error en login:', error);
 
     await this.actionLogsService.logAction({
       userId: -1,
@@ -179,6 +188,7 @@ export class AuthService {
     throw new UnauthorizedException('Email o contraseña incorrectos');
   }
 }
+
 
 async logout(token: string): Promise<any> {
   const normalizedToken = normalizeToken(token);
