@@ -100,6 +100,11 @@ async attachFcmTokenToUser(
     undefined
   );
 
+  console.log('Enviando trigger con:', {
+  subscriberId: userId.toString(),
+  nombre: user.email,
+});
+
   // 🔔 Disparar notificación al canal push registrado
   await novu.trigger('usuario-activo', {
     to: {
