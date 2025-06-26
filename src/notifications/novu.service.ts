@@ -8,7 +8,7 @@ export class NovuService {
   private readonly novu: Novu;
 
   constructor(private readonly configService: ConfigService) {
-    const secretKey = this.configService.get<string>('NOVU_SECRET_KEY');
+    const secretKey = 'b0c256c63c91cc6f586ccb336ffe5f5e';
     if (!secretKey) {
       throw new Error('NOVU_SECRET_KEY no está definido en .env');
     }
