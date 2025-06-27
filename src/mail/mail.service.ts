@@ -32,6 +32,10 @@ export class MailService {
           supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com'),
         },
       });
+      console.log('📨 Preparando email para:', email);
+      console.log('📨 Activation URL:', activationUrl);
+      console.log('📨 Frontend URL:', frontendUrl);
+
       this.logger.log(`Correo de activación enviado a ${email}`);
     } catch (error) {
       this.logger.error(`Error enviando correo a ${email}: ${error.message}`, error.stack);
