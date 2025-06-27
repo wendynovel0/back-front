@@ -105,16 +105,21 @@ export class AuthService {
       console.warn('No se pudo registrar en Novu:', novuError.message);
     }
 
-    // Justo antes de enviar el correo
-    console.log('📤 Enviando correo de activación a:', normalizedEmail);
-    await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
-    // Justo después del intento, si no lanza error
-    console.log('✅ Correo de activación enviado correctamente');
+    try {
+      // ...
 
-    return {
-      success: true,
-      message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
-    };
+      console.log('📤 Enviando correo de activación a:', normalizedEmail);
+      await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
+      console.log('✅ Correo de activación enviado correctamente');
+
+      return {
+        success: true,
+        message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
+      };
+    } catch (error) {
+      console.error('❌ Error en registro (puede ser el correo):', error);
+      throw new InternalServerErrorException('Error al crear el usuario');
+    }
   } catch (error) {
     console.error('Error en registro:', error);
     throw new InternalServerErrorException('Error al crear el usuario');
