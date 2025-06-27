@@ -119,7 +119,7 @@ export class AuthService {
 
 
   async login(loginDto: LoginDto): Promise<any> {
-  const { email, password, recaptchaToken, fcmToken } = loginDto;
+  const { email, password, recaptchaToken } = loginDto;
   console.log('🔐 Login DTO recibido:', loginDto);
 
   try {
@@ -135,36 +135,29 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
     const expiresIn = 3600;
 
-    console.log('📨 Token FCM recibido:', fcmToken || 'No se recibió');
+    // 🔔 NOVU: Disparar notificación "usuario-activo"
+    try {
+      const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
 
-    // 🔔 NOVU: Registrar suscriptor y canal push (solo si se recibe FCM token válido)
-    if (fcmToken && typeof fcmToken === 'string') {
-      try {
-        const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
-
-        console.log('📣 Registrando suscriptor en Novu...');
-        await novu.subscribers.identify(user.user_id.toString(), {
+      console.log('📣 Enviando trigger de notificación usuario-activo...');
+      await novu.trigger('usuario-activo', {
+        to: {
+          subscriberId: user.user_id.toString(),
           email: user.email,
-        });
+        },
+        payload: {
+          userId: user.user_id,
+          email: user.email,
+          timestamp: new Date().toISOString(),
+        },
+      });
 
-        console.log('📲 Asignando canal push FCM...');
-        await novu.subscribers.setCredentials(
-          user.user_id.toString(),
-          'fcm',
-          {
-            deviceTokens: [fcmToken],
-          },
-          undefined // Necesario para evitar interpretación errónea
-        );
-
-        console.log('✅ Usuario registrado en Novu con canal FCM');
-      } catch (novuErr) {
-        console.error(
-          '❌ Error al registrar en Novu:',
-          novuErr?.response?.data || novuErr.message || novuErr
-        );
-        // Nota: puedes decidir lanzar o solo loguear sin afectar el login
-      }
+      console.log('✅ Trigger enviado a Novu');
+    } catch (novuError) {
+      console.error(
+        '❌ Error al enviar trigger a Novu:',
+        novuError?.response?.data || novuError.message || novuError
+      );
     }
 
     await this.actionLogsService.logAction({
