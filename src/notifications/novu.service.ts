@@ -22,17 +22,17 @@ export class NovuService {
     await this.novu.subscribers.identify(userId, { email });
   }
 
-  async sendConfirmationEmail(userId: string, email: string, confirmationUrl: string) {
-    await this.registerSubscriber(userId, email);
+  // async sendConfirmationEmail(userId: string, email: string, confirmationUrl: string) {
+  //   await this.registerSubscriber(userId, email);
 
-    await this.novu.trigger('confirmar-cuenta', {
-      to: { subscriberId: userId },
-      payload: { 
-        email,  
-        confirmationUrl,
-      },
-    });
+  //   await this.novu.trigger('confirmar-cuenta', {
+  //     to: { subscriberId: userId },
+  //     payload: { 
+  //       email,  
+  //       confirmationUrl,
+  //     },
+  //   });
 
-    this.logger.log(`Correo de confirmación enviado a ${email}`);
-  }
+  //   this.logger.log(`Correo de confirmación enviado a ${email}`);
+  // }
 }

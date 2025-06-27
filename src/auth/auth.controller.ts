@@ -105,7 +105,6 @@ async attachFcmTokenToUser(
   nombre: user.email,
 });
 
-  // 🔔 Disparar notificación al canal push registrado
   await novu.trigger('usuario-activo', {
     to: {
       subscriberId: userId.toString(),
