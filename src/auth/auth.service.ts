@@ -105,7 +105,11 @@ export class AuthService {
       console.warn('No se pudo registrar en Novu:', novuError.message);
     }
 
+    // Justo antes de enviar el correo
+    console.log('📤 Enviando correo de activación a:', normalizedEmail);
     await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
+    // Justo después del intento, si no lanza error
+    console.log('✅ Correo de activación enviado correctamente');
 
     return {
       success: true,
