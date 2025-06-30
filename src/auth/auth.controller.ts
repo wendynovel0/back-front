@@ -95,14 +95,28 @@ async attachFcmTokenToUser(
   console.log('FCM Token:', fcmToken);
   console.log('Tipo de fcmToken:', typeof fcmToken);
 
+  const subscriberId = userId.toString();
+const providerId = 'firebase-fcm';
+const credentials = {
+  deviceTokens: [fcmToken],
+};
+
+console.log(' Enviando setCredentials a Novu con:');
+console.log('subscriberId:', subscriberId);
+console.log('providerId:', providerId);
+console.log('credentials:', JSON.stringify(credentials, null, 2));
+
+try {
   await novu.subscribers.setCredentials(
-    userId.toString(),
-    'fcm',
-    {
-      deviceTokens: [fcmToken],
-    },
+    subscriberId,
+    providerId,
+    credentials,
     undefined
   );
+  console.log(' Credenciales registradas exitosamente en Novu.');
+} catch (error) {
+  console.error(' Error al registrar credenciales en Novu:', error);
+}
 
   console.log('Enviando trigger con:', {
   subscriberId: userId.toString(),
