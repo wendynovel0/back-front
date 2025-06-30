@@ -91,6 +91,10 @@ async attachFcmTokenToUser(
   });
 
   // 🔗 Registrar token FCM
+
+  console.log('FCM Token:', fcmToken);
+  console.log('Tipo de fcmToken:', typeof fcmToken);
+
   await novu.subscribers.setCredentials(
     userId.toString(),
     'fcm',
