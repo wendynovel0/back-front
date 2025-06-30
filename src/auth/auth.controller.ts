@@ -117,18 +117,18 @@ await novu.subscribers.setCredentials(
   },
   payload: {
     nombre: user.email,
-    mensaje: '¡Bienvenido/a! Tu canal de notificaciones push está activo.',
+    mensaje: '¡Bienvenido/a!',
   },
   overrides: {
     fcm: {
-      webPush: {
-        fcmOptions: {
-          link: '',
-        },
+      notification: {
+        title: 'Hola desde Novu',
+        body: 'Tu canal push está activo',
       },
     } as any,
   },
 });
+
 
   return {
     success: true,
