@@ -36,7 +36,7 @@ import { ConfigService } from '@nestjs/config';
 import { MailService } from '../mail/mail.service';
 import { RecaptchaGuard } from 'src/recaptcha/recaptcha.guard';
 import { join } from 'path';
-import { Novu } from '@novu/node';
+import { Novu, PushProviderIdEnum } from '@novu/node';
 
 
 
@@ -95,28 +95,16 @@ async attachFcmTokenToUser(
   console.log('FCM Token:', fcmToken);
   console.log('Tipo de fcmToken:', typeof fcmToken);
 
-  const subscriberId = userId.toString();
-const providerId = 'firebase-fcm';
-const credentials = {
-  deviceTokens: [fcmToken],
-};
+ const subscriberId = userId.toString(); // asegúrate de que es string
 
-console.log(' Enviando setCredentials a Novu con:');
-console.log('subscriberId:', subscriberId);
-console.log('providerId:', providerId);
-console.log('credentials:', JSON.stringify(credentials, null, 2));
-
-try {
-  await novu.subscribers.setCredentials(
-    subscriberId,
-    providerId,
-    credentials,
-    undefined
-  );
-  console.log(' Credenciales registradas exitosamente en Novu.');
-} catch (error) {
-  console.error(' Error al registrar credenciales en Novu:', error);
-}
+await novu.subscribers.setCredentials(
+  subscriberId,
+  PushProviderIdEnum.FCM, // o directamente 'fcm'
+  {
+    deviceTokens: [fcmToken],
+  },
+  'firebase-cloud-messaging'
+);
 
   console.log('Enviando trigger con:', {
   subscriberId: userId.toString(),
@@ -124,14 +112,23 @@ try {
 });
 
   await novu.trigger('usuario-activo', {
-    to: {
-      subscriberId: userId.toString(),
-    },
-    payload: {
-      nombre: user.email, // ajusta según tus necesidades
-      mensaje: '¡Bienvenido/a! Tu canal de notificaciones push está activo.',
-    },
-  });
+  to: {
+    subscriberId,
+  },
+  payload: {
+    nombre: user.email,
+    mensaje: '¡Bienvenido/a! Tu canal de notificaciones push está activo.',
+  },
+  overrides: {
+    fcm: {
+      webPush: {
+        fcmOptions: {
+          link: '',
+        },
+      },
+    } as any,
+  },
+});
 
   return {
     success: true,
