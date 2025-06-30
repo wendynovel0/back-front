@@ -97,35 +97,49 @@ async attachFcmTokenToUser(
 
  const subscriberId = userId.toString(); // asegúrate de que es string
 
-await novu.subscribers.setCredentials(
-  subscriberId,
-  PushProviderIdEnum.FCM, // o directamente 'fcm'
-  {
-    deviceTokens: [fcmToken],
-  },
-  'firebase-cloud-messaging'
-);
+async function setFcmCredentials(subscriberId: string, fcmToken: string) {
+  try {
+    console.log('Intentando registrar FCM token en Novu...', {
+      subscriberId,
+      fcmToken: fcmToken.substring(0, 10) + '...', 
+    });
 
+    const result = await novu.subscribers.setCredentials(
+      subscriberId,
+      PushProviderIdEnum.FCM, // También puedes usar directamente 'fcm' como string
+      {
+        deviceTokens: [fcmToken],
+      },
+      'firebase-cloud-messaging' // Asegúrate que este ID coincide con tu integración en Novu
+    );
+
+    console.log('✅ Token FCM registrado correctamente en Novu:', result);
+    return result;
+  } catch (error) {
+    console.error('❌ Error al registrar FCM token en Novu:', {
+      error: error instanceof Error ? error.message : error,
+      subscriberId,
+      fcmToken: fcmToken ? fcmToken.substring(0, 10) + '...' : 'undefined',
+    });
+
+    // Opcional: Revisar detalles específicos del error de Novu
+    if (error?.response?.data) {
+      console.error('Detalles del error de Novu:', error.response.data);
+    }
+
+    throw error; // Opcional: Relanza el error si necesitas manejarlo en otro lugar
+  }
+}
   console.log('Enviando trigger con:', {
   subscriberId: userId.toString(),
   nombre: user.email,
 });
 
   await novu.trigger('usuario-activo', {
-  to: {
-    subscriberId,
-  },
+  to: { subscriberId },
   payload: {
     nombre: user.email,
     mensaje: '¡Bienvenido/a!',
-  },
-  overrides: {
-    fcm: {
-      notification: {
-        title: 'Hola desde Novu',
-        body: 'Tu canal push está activo',
-      },
-    } as any,
   },
 });
 
