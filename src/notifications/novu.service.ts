@@ -8,31 +8,54 @@ export class NovuService {
   private readonly novu: Novu;
 
   constructor(private readonly configService: ConfigService) {
-  const secretKey = this.configService.get<string>('NOVU_SECRET_KEY');
-  if (!secretKey) {
-    throw new Error('NOVU_SECRET_KEY no está definido en .env');
-  }
+    const secretKey = this.configService.get<string>('NOVU_SECRET_KEY');
+    if (!secretKey) {
+      throw new Error('NOVU_SECRET_KEY no está definido en las variables de entorno');
+    }
 
-  this.novu = new Novu(secretKey);
-  console.log(secretKey)
-  this.logger.log(`🔐 Clave NOVU cargada correctamente`);
-}
+    this.novu = new Novu(secretKey, {
+      backendUrl: 'https://api.novu.co' // Asegura la URL correcta
+    });
+    this.logger.log(`🔐 Novu inicializado correctamente`);
+  }
 
   async registerSubscriber(userId: string, email: string) {
-    await this.novu.subscribers.identify(userId, { email });
+    try {
+      await this.novu.subscribers.identify(userId, { 
+        email,
+        firstName: 'Usuario', // Datos por defecto
+        lastName: 'Nuevo' 
+      });
+      this.logger.log(`📝 Suscriptor ${userId} registrado en Novu`);
+    } catch (error) {
+      this.logger.error(`❌ Error registrando suscriptor en Novu: ${error.message}`);
+      throw error;
+    }
   }
 
-  // async sendConfirmationEmail(userId: string, email: string, confirmationUrl: string) {
-  //   await this.registerSubscriber(userId, email);
+  async sendConfirmationEmail(userId: string, email: string, confirmationUrl: string) {
+    try {
+      await this.registerSubscriber(userId, email);
 
-  //   await this.novu.trigger('confirmar-cuenta', {
-  //     to: { subscriberId: userId },
-  //     payload: { 
-  //       email,  
-  //       confirmationUrl,
-  //     },
-  //   });
+      const isProduction = this.configService.get('NODE_ENV') === 'production';
+      const targetEmail = isProduction ? email : 'test@mailtrap.io';
 
-  //   this.logger.log(`Correo de confirmación enviado a ${email}`);
-  // }
+      await this.novu.trigger('confirmar-cuenta', {
+        to: { 
+          subscriberId: userId,
+          email: targetEmail
+        },
+        payload: { 
+          email: targetEmail,
+          confirmationUrl,
+          environment: this.configService.get('NODE_ENV') || 'development'
+        },
+      });
+
+      this.logger.log(`📤 Email de confirmación enviado a ${targetEmail}`);
+    } catch (error) {
+      this.logger.error(`❌ Error enviando email de confirmación: ${error.message}`);
+      throw error;
+    }
+  }
 }
