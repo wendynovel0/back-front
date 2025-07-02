@@ -37,6 +37,7 @@ import { MailService } from '../mail/mail.service';
 import { RecaptchaGuard } from 'src/recaptcha/recaptcha.guard';
 import { join } from 'path';
 import { Novu, PushProviderIdEnum } from '@novu/node';
+import Pushpad from 'pushpad';
 
 
 
@@ -70,80 +71,33 @@ export class AuthController {
   }
 
   @Post('fcm')
-async attachFcmTokenToUser(
-  @Body('userId') userId: number,
-  @Body('fcmToken') fcmToken: string,
-) {
-  // Validaciones iniciales
-  if (!userId || !fcmToken) {
-    throw new BadRequestException('userId y fcmToken son obligatorios');
-  }
+async attachFcm(@Body('userId') userId: number, @Body('uid') uid: string) {
+  if (!userId || !uid) throw new BadRequestException();
 
   const user = await this.userService.findOne(userId);
-  if (!user) {
-    throw new NotFoundException('Usuario no encontrado');
-  }
+  if (!user) throw new NotFoundException();
+
+  const pushpadClient = new Pushpad({
+    authToken: process.env.PUSHPAD_AUTH_TOKEN,
+    projectId: Number(process.env.PUSHPAD_PROJECT_ID),
+  });
 
   const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
-  const subscriberId = userId.toString();
 
-  try {
-    // 1. Identificar/crear el suscriptor en Novu
-    await novu.subscribers.identify(subscriberId, {
-      email: user.email,
-    });
+  await novu.subscribers.identify(userId.toString(), { email: user.email });
 
-    console.log('Registrando FCM Token:', {
-      subscriberId,
-      fcmToken: fcmToken.substring(0, 5) + '...' + fcmToken.slice(-5), // Muestra inicio y fin del token
-    });
+  await novu.subscribers.setCredentials(
+    userId.toString(),
+    PushProviderIdEnum.Pushpad,
+    { deviceTokens: [uid] }
+  );
 
-    // 2. Registrar credenciales FCM
-    await novu.subscribers.setCredentials(
-      subscriberId,
-      'fcm', // Usamos string directamente por compatibilidad
-      {
-        deviceTokens: [fcmToken],
-      },
-      'firebase-cloud-messaging' // Debe coincidir con el ID de tu integración en Novu
-    );
+  await novu.trigger('usuario-activo', {
+    to: { subscriberId: userId.toString() },
+    payload: { mensaje: 'Canal Pushpad activo ✨' },
+  });
 
-    // 3. Disparar notificación de prueba
-    console.log('Enviando trigger a:', subscriberId);
-    await novu.trigger('usuario-activo', {
-      to: { subscriberId },
-      payload: {
-        nombre: user.email,
-        mensaje: '¡Bienvenido/a!',
-      },
-    });
-
-    return {
-      success: true,
-      message: 'Token FCM registrado y notificación enviada',
-      debug: {
-        subscriberId,
-        email: user.email,
-        tokenPreview: fcmToken.substring(0, 5) + '...' + fcmToken.slice(-5),
-      }
-    };
-
-  } catch (error) {
-    console.error('Error en flujo FCM:', {
-      error: error.response?.data || error.message,
-      userId,
-      subscriberId,
-    });
-
-    throw new InternalServerErrorException({
-      success: false,
-      message: 'Error al procesar el token FCM',
-      technicalDetails: {
-        error: error.message,
-        step: error.config?.url?.includes('subscribers') ? 'registro' : 'notificación'
-      }
-    });
-  }
+  return { success: true };
 }
 
   @Post('register')
