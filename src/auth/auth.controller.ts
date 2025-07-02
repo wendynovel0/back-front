@@ -38,6 +38,7 @@ import { RecaptchaGuard } from 'src/recaptcha/recaptcha.guard';
 import { join } from 'path';
 import { Novu, PushProviderIdEnum } from '@novu/node';
 import Pushpad from 'pushpad';
+import { createHmac } from 'crypto';
 
 
 
@@ -69,6 +70,42 @@ export class AuthController {
     await this.authService.logout(token);
     return { message: 'Sesión cerrada correctamente' };
   }
+
+
+  @Get('pushpad-signature')
+getPushpadSignature(@Query('userId') userId: string) {
+  if (!userId) {
+    throw new BadRequestException('userId es requerido');
+  }
+
+  const authToken = this.configService.get('PUSHPAD_AUTH_TOKEN');
+  if (!authToken) {
+    throw new BadRequestException('Token de Pushpad no configurado');
+  }
+
+  const uid_signature = createHmac('sha256', authToken)
+  .update(userId)
+  .digest('hex');
+
+  return {
+    uid: userId,
+    uid_signature,
+  };
+}
+
+@Post('pushpad-confirm')
+async confirmPushpad(@Body('userId') userId: string) {
+  if (!userId) {
+    throw new BadRequestException('userId es requerido');
+  }
+
+  console.log(`✅ Usuario ${userId} confirmó su suscripción a Pushpad`);
+
+  return {
+    success: true,
+    message: 'Suscripción a Pushpad confirmada',
+  };
+}
 
   @Post('fcm')
 async attachFcm(@Body('userId') userId: number, @Body('uid') uid: string) {
