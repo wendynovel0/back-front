@@ -43,6 +43,7 @@ export class MailService {
     }
   }
 
+
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
     const frontendUrl = this.configService.get('FRONTEND_URL');
     const resetUrl = `${frontendUrl}/reset-password?token=${encodeURIComponent(token)}`;
@@ -51,7 +52,8 @@ export class MailService {
       await this.mailerService.sendMail({
         from: this.mailFrom,
         to: email,
-        subject: `Restablece tu contraseña en Hoken`,
+
+        subject: `Restablece tu contraseña en TiendApi`,
         template: 'password-reset',
         context: {
           email,

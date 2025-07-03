@@ -90,6 +90,12 @@ export class AuthService {
     });
 
     try {
+
+      const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/home?token=${activationToken}`;
+      console.log('Enviando correo de activación a:', normalizedEmail);
+      await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
+      console.log('Correo de activación enviado correctamente');
+
       const novuSecretKey = this.configService.get<string>('NOVU_SECRET_KEY');
       if (!novuSecretKey) {
         throw new Error('NOVU_SECRET_KEY no está definido en las variables de entorno');
@@ -121,12 +127,17 @@ export class AuthService {
       await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
       console.log('✅ Correo de activación enviado correctamente');
 
+
       return {
         success: true,
         message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
       };
     } catch (error) {
+
+      console.error('Error enviando correo de activación:', error);
+
       console.error(' Error en registro (puede ser el correo):', error);
+
       throw new InternalServerErrorException('Error al crear el usuario');
     }
   } catch (error) {
@@ -134,6 +145,9 @@ export class AuthService {
     throw new InternalServerErrorException('Error al crear el usuario');
   }
 }
+
+
+
 
 
   async login(loginDto: LoginDto): Promise<any> {
