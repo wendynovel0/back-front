@@ -108,11 +108,19 @@ async confirmPushpad(@Query('userId') userId: string) {
 }
 
   @Post('fcm')
-async attachFcm(@Body('userId') userId: number, @Body('uid') uid: string) {
-  if (!userId || !uid) throw new BadRequestException();
+async attachFcm(
+  @Query('userId') userIdQuery: string,
+  @Query('uid') uidQuery: string,
+  @Body('userId') userIdBody: number,
+  @Body('uid') uidBody: string,
+) {
+  const userId = userIdBody ?? parseInt(userIdQuery, 10);
+  const uid = uidBody ?? uidQuery;
+
+  if (!userId || !uid) throw new BadRequestException('userId y uid son requeridos');
 
   const user = await this.userService.findOne(userId);
-  if (!user) throw new NotFoundException();
+  if (!user) throw new NotFoundException('Usuario no encontrado');
 
   const pushpadClient = new Pushpad({
     authToken: process.env.PUSHPAD_AUTH_TOKEN,
