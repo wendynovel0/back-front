@@ -14,34 +14,25 @@ export class MailService {
     this.mailFrom = `"${this.configService.get('MAIL_FROM_NAME')}" <${this.configService.get('MAIL_FROM_ADDRESS')}>`;
   }
 
-  async sendConfirmationEmail(email: string, token: string): Promise<void> {
-    const frontendUrl = this.configService.get('FRONTEND_URL');
-    const activationUrl = `${frontendUrl}/auth/confirm-email?token=${encodeURIComponent(token)}`;
-
-
-    try {
-      await this.mailerService.sendMail({
-        from: this.mailFrom,
-        to: email,
-        subject: `Activa tu cuenta en TiendApi`,
-        template: 'confirmation',
-        context: {
-          email,
-          activationUrl,
-          frontendUrl,
-          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com'),
-        },
-      });
-      console.log('📨 Preparando email para:', email);
-      console.log('📨 Activation URL:', activationUrl);
-      console.log('📨 Frontend URL:', frontendUrl);
-
-      this.logger.log(`Correo de activación enviado a ${email}`);
-    } catch (error) {
-      this.logger.error(`Error enviando correo a ${email}: ${error.message}`, error.stack);
-      throw new Error('No se pudo enviar el correo de confirmación');
-    }
+ async sendConfirmationEmail(email: string, token: string, confirmationUrl: string): Promise<void> {
+  try {
+    await this.mailerService.sendMail({
+      from: this.mailFrom,
+      to: email,
+      subject: 'Activa tu cuenta en TiendApi',
+      template: 'confirmation',
+      context: {
+        email,
+        confirmationUrl,
+      },
+    });
+    this.logger.log(`📨 Correo de activación enviado a ${email}`);
+  } catch (error) {
+    this.logger.error(` Error enviando correo: ${error.message}`, error.stack);
+    throw new Error('No se pudo enviar el correo de confirmación');
   }
+}
+
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
     const frontendUrl = this.configService.get('FRONTEND_URL');
@@ -51,7 +42,7 @@ export class MailService {
       await this.mailerService.sendMail({
         from: this.mailFrom,
         to: email,
-        subject: `Restablece tu contraseña en Hoken`,
+        subject: `Restablece tu contraseña en TiendApi`,
         template: 'password-reset',
         context: {
           email,

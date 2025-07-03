@@ -1,57 +1,9 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Cuenta Activada - TiendApi</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9fafb;
-      color: #2A3E4C;
-      margin: 0;
-      padding: 40px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
-    }
-    h2 {
-      font-weight: 700;
-      margin-bottom: 12px;
-      font-size: 2rem;
-    }
-    p {
-      font-size: 1.1rem;
-      margin: 8px 0;
-      max-width: 320px;
-      line-height: 1.4;
-    }
-    .button {
-      margin-top: 24px;
-      background-color: #2A3E4C;
-      color: #00AEEF;
-      padding: 14px 28px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 1.1rem;
-      text-decoration: none;
-      transition: background-color 0.3s ease;
-      display: inline-block;
-    }
-    .button:hover {
-      background-color: #1f2c36;
-    }
-  </style>
-</head>
-<body>
-  <h2>¡Cuenta activada con éxito!</h2>
-  <p>Ahora puedes iniciar sesión en TiendApi.</p>
-  <a href="http://localhost:5173/login" class="button" target="_blank" rel="noopener">Acceder a login</a>
-  <p>Gracias por unirte a nosotros.</p>
-  <p>Si tienes alguna pregunta, no dudes en contactarnos.</p>
-  <p>Saludos,<br>El equipo de TiendApi</p>
-</body>
-</html>
-{{! Este es para la confirmación de cuenta, no para la activación. }}
+<h2>¡Bienvenido a {{APP_NAME}} !</h2>
+<p>Tu cuenta ha sido activada con éxito.</p>
+<p>Puedes acceder a tu cuenta desde el siguiente enlace:</p>
+<p>
+  <a href="{{loginUrl}}" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+    Iniciar sesión
+  </a>
+</p>
+<p>Si tienes alguna duda, contáctanos en {{supportEmail}}.</p>
