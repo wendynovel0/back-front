@@ -107,42 +107,59 @@ async confirmPushpad(@Query('userId') userId: string) {
   };
 }
 
-  @Post('fcm')
+@Post('fcm')
 async attachFcm(
   @Query('userId') userIdQuery: string,
   @Query('uid') uidQuery: string,
   @Body('userId') userIdBody: number,
   @Body('uid') uidBody: string,
 ) {
-  const userId = userIdBody ?? parseInt(userIdQuery, 10);
-  const uid = uidBody ?? uidQuery;
+  try {
+    const rawUserId = userIdBody ?? userIdQuery;
+    const uid = uidBody ?? uidQuery;
 
-  if (!userId || !uid) throw new BadRequestException('userId y uid son requeridos');
+    if (!rawUserId || !uid) {
+      throw new BadRequestException('userId y uid son requeridos');
+    }
 
-  const user = await this.userService.findOne(userId);
-  if (!user) throw new NotFoundException('Usuario no encontrado');
+    const userId = parseInt(String(rawUserId), 10);
+    if (isNaN(userId)) {
+      throw new BadRequestException('userId debe ser un número válido');
+    }
 
-  const pushpadClient = new Pushpad({
-    authToken: process.env.PUSHPAD_AUTH_TOKEN,
-    projectId: Number(process.env.PUSHPAD_PROJECT_ID),
-  });
+    console.log('📩 Recibido userId:', userId);
+    console.log('📩 Recibido uid:', uid);
 
-  const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
+    const user = await this.userService.findOne(userId);
+    if (!user) {
+      console.warn('⚠️ Usuario no encontrado:', userId);
+      throw new NotFoundException('Usuario no encontrado');
+    }
 
-  await novu.subscribers.identify(userId.toString(), { email: user.email });
+    const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
 
-  await novu.subscribers.setCredentials(
-    userId.toString(),
-    PushProviderIdEnum.Pushpad,
-    { deviceTokens: [uid] }
-  );
+    await novu.subscribers.identify(userId.toString(), { email: user.email });
 
-  await novu.trigger('usuario-activo', {
-    to: { subscriberId: userId.toString() },
-    payload: { mensaje: 'Canal Pushpad activo ✨' },
-  });
+    const resCredentials = await novu.subscribers.setCredentials(
+      userId.toString(),
+      PushProviderIdEnum.Pushpad,
+      { deviceTokens: [uid] }
+    );
 
-  return { success: true };
+    console.log('🔐 setCredentials respuesta:', resCredentials);
+
+    const triggerRes = await novu.trigger('usuario-activo', {
+      to: { subscriberId: userId.toString() },
+      payload: { mensaje: 'Canal Pushpad activo ✨' },
+    });
+
+    console.log('🚀 Trigger lanzado:', triggerRes);
+
+    return { success: true };
+  } catch (error) {
+    console.error('❌ Error en /fcm:', error);
+    throw error;
+  }
 }
 
   @Post('register')
