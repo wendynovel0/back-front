@@ -86,7 +86,7 @@ export class MailService {
           backendUrl,
           loginUrl: `${frontendUrl}/login`,
           APP_NAME: this.configService.get('APP_NAME', 'TiendApi'),
-          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@tiendapi.com'),
+          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS') || 'soporte@tiendapi.com'
         },
       });
       this.logger.log(`Correo de bienvenida enviado a ${email}`);

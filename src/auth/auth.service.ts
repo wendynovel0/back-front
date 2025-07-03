@@ -90,9 +90,8 @@ export class AuthService {
     });
 
     try {
-
       const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/home?token=${activationToken}`;
-      console.log('Enviando correo de activación a:', normalizedEmail);
+await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
       await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
       console.log('Correo de activación enviado correctamente');
 

@@ -1,17 +1,8 @@
-<h2>Hola 👋</h2>
-<p>Gracias por registrarte en TiendApi.</p>
-<p>Por favor confirma tu cuenta haciendo clic en el siguiente botón:</p>
-<p>
-  <a href="{{activationUrl}}" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
-    Confirmar cuenta
-  </a>
-</p>
-<p>Si no te registraste, ignora este mensaje.</p>   
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8" />
-    <title>Confirmar Cuenta - TiendApi</title>
+    <title>Confirmar Cuenta - {{APP_NAME}}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,10 +41,11 @@
     </style>
 </head>
 <body>
-    <h2>¡Último paso para activar tu cuenta!</h2>
-    <p>Haz clic en el botón para confirmar:</p>
+    <h2>¡Hola 👋!</h2>
+    <p>Gracias por registrarte en <strong>{{APP_NAME}}</strong>.</p>
+    <p>Haz clic en el siguiente botón para confirmar tu cuenta:</p>
     <a href="{{activationUrl}}" class="button" target="_blank" rel="noopener noreferrer">Confirmar Cuenta</a>
     <p class="link-text">Si no funciona, visita este enlace:<br>{{activationUrl}}</p>
+    <p>Si no solicitaste este registro, puedes ignorar este mensaje.</p>
 </body>
 </html>
-
