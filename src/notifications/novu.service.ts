@@ -35,29 +35,4 @@ export class NovuService {
     }
   }
 
-  async sendConfirmationEmail(userId: string, email: string, confirmationUrl: string) {
-    try {
-      await this.registerSubscriber(userId, email);
-
-      // Siempre usamos el email real, no test/mailtrap
-      const targetEmail = email;
-
-      await this.novu.trigger('confirmar-cuenta', {
-        to: { 
-          subscriberId: userId,
-          email: targetEmail
-        },
-        payload: { 
-          email: targetEmail,
-          confirmationUrl,
-          environment: this.configService.get('NODE_ENV') || 'development'
-        },
-      });
-
-      this.logger.log(`📤 Email de confirmación enviado a ${targetEmail}`);
-    } catch (error) {
-      this.logger.error(`❌ Error enviando email de confirmación: ${error.message}`);
-      throw error;
-    }
-  }
 }
