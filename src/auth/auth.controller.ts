@@ -94,9 +94,9 @@ getPushpadSignature(@Query('userId') userId: string) {
 }
 
 @Post('pushpad-confirm')
-async confirmPushpad(@Body('userId') userId: string) {
-  if (!userId) {
-    throw new BadRequestException('userId es requerido');
+async confirmPushpad(@Query('userId') userId: string) {
+  if (!userId || typeof userId !== 'string' || !userId.trim()) {
+    throw new BadRequestException('El campo "userId" es obligatorio y debe ser un string válido.');
   }
 
   console.log(`✅ Usuario ${userId} confirmó su suscripción a Pushpad`);
