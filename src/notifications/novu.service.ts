@@ -23,8 +23,10 @@ export class NovuService {
     try {
       await this.novu.subscribers.identify(userId, { 
         email,
-        firstName: 'Usuario', // Datos por defecto
-        lastName: 'Nuevo' 
+        data: {
+          subscriberId: userId,
+          email
+        }
       });
       this.logger.log(`📝 Suscriptor ${userId} registrado en Novu`);
     } catch (error) {
@@ -37,8 +39,8 @@ export class NovuService {
     try {
       await this.registerSubscriber(userId, email);
 
-      const isProduction = this.configService.get('NODE_ENV') === 'production';
-      const targetEmail = isProduction ? email : 'test@mailtrap.io';
+      // Siempre usamos el email real, no test/mailtrap
+      const targetEmail = email;
 
       await this.novu.trigger('confirmar-cuenta', {
         to: { 
