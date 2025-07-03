@@ -105,7 +105,7 @@ export class AuthService {
     }
 
     try {
-      const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/confirm?token=${activationToken}`;
+      const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/home?token=${activationToken}`;
       await this.novuService.sendConfirmationEmail(
         newUser.user_id.toString(),
         normalizedEmail,
