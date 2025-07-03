@@ -1,7 +1,8 @@
 import { MailerModule } from '@nestjs-modules/mailer';
 import { Module } from '@nestjs/common';
-import { MailService } from './mail.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MailService } from './mail.service';
+import { MailController } from './mail.controller';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { join } from 'path';
 
@@ -12,15 +13,16 @@ import { join } from 'path';
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => ({
         transport: {
-          host: 'smtp-relay.brevo.com',
-          port: 587,
+          host: config.get('MAIL_HOST'),
+          port: config.get<number>('MAIL_PORT'),
+          secure: false,
           auth: {
-            user: '91332c001@smtp-brevo.com',
-            pass: config.get('BREVO_SMTP_PASSWORD'),
+            user: config.get('MAIL_USER'),
+            pass: config.get('MAIL_PASS'),
           },
         },
         defaults: {
-          from: `"TiendApi" <91332c001@smtp-brevo.com>`,
+          from: `"${config.get('MAIL_FROM_NAME')}" <${config.get('MAIL_FROM_ADDRESS')}>`,
         },
         template: {
           dir: join(__dirname, 'templates'),
@@ -30,6 +32,7 @@ import { join } from 'path';
       }),
     }),
   ],
+  controllers: [MailController],
   providers: [MailService],
   exports: [MailService],
 })

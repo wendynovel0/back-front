@@ -90,17 +90,54 @@ export class AuthService {
     });
 
     try {
+
       const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/home?token=${activationToken}`;
       console.log('Enviando correo de activación a:', normalizedEmail);
-      await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken, confirmationUrl);
+      await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
       console.log('Correo de activación enviado correctamente');
+
+      const novuSecretKey = this.configService.get<string>('NOVU_SECRET_KEY');
+      if (!novuSecretKey) {
+        throw new Error('NOVU_SECRET_KEY no está definido en las variables de entorno');
+      }
+
+      const novu = new Novu(novuSecretKey);
+
+      await novu.subscribers.identify(newUser.user_id.toString(), {
+        email: newUser.email,
+      });
+    } catch (novuError) {
+      console.warn('No se pudo registrar en Novu:', novuError.message);
+    }
+
+    try {
+      const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/home?token=${activationToken}`;
+      await this.novuService.sendConfirmationEmail(
+        newUser.user_id.toString(),
+        normalizedEmail,
+        confirmationUrl
+      );
+      console.log('✅ Correo de confirmación enviado a Novu');
+    } catch (novuEmailError) {
+      console.warn('No se pudo enviar correo con Novu:', novuEmailError.message);
+    }
+
+    try {
+      console.log('📤 Enviando correo de activación a:', normalizedEmail);
+      await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
+      console.log('✅ Correo de activación enviado correctamente');
+
 
       return {
         success: true,
         message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
       };
     } catch (error) {
+
       console.error('Error enviando correo de activación:', error);
+
+      console.error(' Error en registro (puede ser el correo):', error);
+
       throw new InternalServerErrorException('Error al crear el usuario');
     }
   } catch (error) {
@@ -108,6 +145,8 @@ export class AuthService {
     throw new InternalServerErrorException('Error al crear el usuario');
   }
 }
+
+
 
 
 
