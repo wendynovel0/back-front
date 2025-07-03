@@ -30,6 +30,7 @@ export class MailService {
           activationUrl,
           frontendUrl,
           supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com'),
+          APP_NAME: this.configService.get('APP_NAME', 'TiendApi'),
         },
       });
       console.log('📨 Preparando email para:', email);
@@ -59,6 +60,7 @@ export class MailService {
           email,
           resetUrl,
           expirationHours: 24,
+          APP_NAME: this.configService.get('APP_NAME', 'TiendApi'),
         },
       });
       this.logger.log(`Correo de restablecimiento enviado a ${email}`);
@@ -83,6 +85,7 @@ export class MailService {
           frontendUrl,
           backendUrl,
           loginUrl: `${frontendUrl}/login`,
+          APP_NAME: this.configService.get('APP_NAME', 'TiendApi'),
           supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@tiendapi.com'),
         },
       });
