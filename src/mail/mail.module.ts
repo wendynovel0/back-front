@@ -18,7 +18,7 @@ import { join } from 'path';
       secure: false,
       auth: {
         user: config.get('MAIL_USER'),
-        pass: config.get('MAIL_PASS'),    
+        pass: config.get('MAIL_PASSWORD'),    
       },
     },
     defaults: {
