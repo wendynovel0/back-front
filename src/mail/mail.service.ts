@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 
@@ -18,7 +18,6 @@ export class MailService {
     const frontendUrl = this.configService.get('FRONTEND_URL');
     const activationUrl = `${frontendUrl}/auth/confirm-email?token=${encodeURIComponent(token)}`;
 
-
     try {
       await this.mailerService.sendMail({
         from: this.mailFrom,
@@ -29,21 +28,18 @@ export class MailService {
           email,
           activationUrl,
           frontendUrl,
-          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@hoken.com'),
+          supportEmail: this.configService.get('MAIL_SUPPORT_ADDRESS', 'soporte@tiendapi.com'),
           APP_NAME: this.configService.get('APP_NAME', 'TiendApi'),
         },
       });
-      console.log('📨 Preparando email para:', email);
-      console.log('📨 Activation URL:', activationUrl);
-      console.log('📨 Frontend URL:', frontendUrl);
-
-      this.logger.log(`Correo de activación enviado a ${email}`);
+      this.logger.log(`📨 Correo de activación enviado a ${email}`);
+      this.logger.log(`📨 Activation URL: ${activationUrl}`);
+      this.logger.log(`📨 Frontend URL: ${frontendUrl}`);
     } catch (error) {
       this.logger.error(`Error enviando correo a ${email}: ${error.message}`, error.stack);
-      throw new Error('No se pudo enviar el correo de confirmación');
+      throw new InternalServerErrorException('No se pudo enviar el correo de confirmación');
     }
   }
-
 
   async sendPasswordResetEmail(email: string, token: string): Promise<void> {
     const frontendUrl = this.configService.get('FRONTEND_URL');
@@ -53,7 +49,6 @@ export class MailService {
       await this.mailerService.sendMail({
         from: this.mailFrom,
         to: email,
-
         subject: `Restablece tu contraseña en TiendApi`,
         template: 'password-reset',
         context: {
@@ -66,7 +61,7 @@ export class MailService {
       this.logger.log(`Correo de restablecimiento enviado a ${email}`);
     } catch (error) {
       this.logger.error(`Error enviando correo a ${email}: ${error.message}`, error.stack);
-      throw new Error('No se pudo enviar el correo de restablecimiento');
+      throw new InternalServerErrorException('No se pudo enviar el correo de restablecimiento');
     }
   }
 

@@ -52,7 +52,7 @@ export class AuthService {
   
 
  async register(registerDto: RegisterDto): Promise<any> {
-  const { email, password, recaptchaToken } = registerDto;
+  const { email, password } = registerDto;
 
   if (!email || !password) {
     throw new UnauthorizedException('Se requieren email y contraseña');
@@ -95,29 +95,24 @@ await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
 
       
     } catch (novuError) {
-      console.warn('No se pudo registrar en Novu:', novuError.message);
+      this.logger.warn('No se pudo registrar en Novu para notificaciones push:', novuError.message);
     }
 
     try {
       console.log('📤 Enviando correo de activación a:', normalizedEmail);
       await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
-      console.log('✅ Correo de activación enviado correctamente');
-
-
-      return {
-        success: true,
-        message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
-      };
+      this.logger.log(`Correo de activación enviado a ${normalizedEmail}`);
     } catch (error) {
-
-      console.error('Error enviando correo de activación:', error);
-
-      console.error(' Error en registro (puede ser el correo):', error);
-
-      throw new InternalServerErrorException('Error al crear el usuario');
+      this.logger.error(`Error enviando correo de activación a ${normalizedEmail}: ${error.message}`);
+      throw new InternalServerErrorException('No se pudo enviar el correo de confirmación');
     }
+
+    return {
+      success: true,
+      message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
+    };
   } catch (error) {
-    console.error('Error en registro:', error);
+    this.logger.error('Error en registro:', error);
     throw new InternalServerErrorException('Error al crear el usuario');
   }
 }
