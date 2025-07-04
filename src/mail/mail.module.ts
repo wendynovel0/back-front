@@ -11,25 +11,31 @@ import { join } from 'path';
     MailerModule.forRootAsync({
   imports: [ConfigModule],
   inject: [ConfigService],
-  useFactory: (config: ConfigService) => ({
+  useFactory: (config: ConfigService) => {
+  const isProduction = config.get('NODE_ENV') === 'production';
+
+  return {
     transport: {
-      host: config.get('MAIL_HOST'),
-      port: config.get<number>('MAIL_PORT'),
+      host: isProduction
+        ? 'smtp-relay.brevo.com'
+        : 'sandbox.smtp.mailtrap.io',
+      port: isProduction ? 587 : 2525,
       secure: false,
       auth: {
         user: config.get('MAIL_USER'),
-        pass: config.get('MAIL_PASSWORD'),    
+        pass: config.get('MAIL_PASSWORD'),
       },
     },
     defaults: {
       from: `"${config.get('MAIL_FROM_NAME')}" <${config.get('MAIL_FROM_ADDRESS')}>`,
     },
-        template: {
-          dir: join(__dirname, 'templates'),
-          adapter: new HandlebarsAdapter(),
-          options: { strict: true },
-        },
-      }),
+    template: {
+      dir: join(__dirname, 'templates'),
+      adapter: new HandlebarsAdapter(),
+      options: { strict: true },
+    },
+  };
+},
     }),
   ],
   controllers: [MailController],

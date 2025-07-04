@@ -19,6 +19,10 @@ export class MailService {
          this.logger.log(`Usando SMTP host: ${host}`); 
     const frontendUrl = this.configService.get('FRONTEND_URL');
     const activationUrl = `${frontendUrl}/auth/confirm-email?token=${encodeURIComponent(token)}`;
+      
+      console.log('🌐 MAIL ENV:', process.env.NODE_ENV);
+      console.log('📤 Enviando correo desde:', process.env.MAIL_HOST, process.env.MAIL_PORT);
+      console.log(`🔔 Entrando a sendConfirmationEmail para: ${email}`);
 
     try {
       await this.mailerService.sendMail({
@@ -40,6 +44,7 @@ export class MailService {
     } catch (error) {
       this.logger.error(`Error enviando correo a ${email}: ${error.message}`, error.stack);
       throw new InternalServerErrorException('No se pudo enviar el correo de confirmación');
+      
     }
   }
 
@@ -90,5 +95,7 @@ export class MailService {
     } catch (error) {
       this.logger.error(`Error enviando correo de bienvenida a ${email}: ${error.message}`, error.stack);
     }
+
   }
+  
 }
