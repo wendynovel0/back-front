@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { NovuService } from '../notifications/novu.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Like } from 'typeorm';
 import { UserService } from '../users/users.service';
@@ -48,7 +47,6 @@ export class AuthService {
   private readonly actionLogsService: ActionLogsService,
   private readonly configService: ConfigService, 
   private readonly recaptchaService: RecaptchaService, 
-  private readonly novuService: NovuService
 
 ) {}
   
@@ -90,36 +88,14 @@ export class AuthService {
     });
 
     try {
-
       const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/home?token=${activationToken}`;
-      console.log('Enviando correo de activación a:', normalizedEmail);
+await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
       await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
       console.log('Correo de activación enviado correctamente');
 
-      const novuSecretKey = this.configService.get<string>('NOVU_SECRET_KEY');
-      if (!novuSecretKey) {
-        throw new Error('NOVU_SECRET_KEY no está definido en las variables de entorno');
-      }
-
-      const novu = new Novu(novuSecretKey);
-
-      await novu.subscribers.identify(newUser.user_id.toString(), {
-        email: newUser.email,
-      });
+      
     } catch (novuError) {
       console.warn('No se pudo registrar en Novu:', novuError.message);
-    }
-
-    try {
-      const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/home?token=${activationToken}`;
-      await this.novuService.sendConfirmationEmail(
-        newUser.user_id.toString(),
-        normalizedEmail,
-        confirmationUrl
-      );
-      console.log('✅ Correo de confirmación enviado a Novu');
-    } catch (novuEmailError) {
-      console.warn('No se pudo enviar correo con Novu:', novuEmailError.message);
     }
 
     try {
@@ -146,10 +122,6 @@ export class AuthService {
   }
 }
 
-
-
-
-
   async login(loginDto: LoginDto): Promise<any> {
   const { email, password, recaptchaToken } = loginDto;
   console.log('🔐 Login DTO recibido:', loginDto);
@@ -166,31 +138,6 @@ export class AuthService {
 
     const token = this.jwtService.sign(payload);
     const expiresIn = 3600;
-
-    // 🔔 NOVU: Disparar notificación "usuario-activo"
-    try {
-      const novu = new Novu(this.configService.get('NOVU_SECRET_KEY'));
-
-      console.log('📣 Enviando trigger de notificación usuario-activo...');
-      await novu.trigger('usuario-activo', {
-        to: {
-          subscriberId: user.user_id.toString(),
-          email: user.email,
-        },
-        payload: {
-          userId: user.user_id,
-          email: user.email,
-          timestamp: new Date().toISOString(),
-        },
-      });
-
-      console.log('✅ Trigger enviado a Novu');
-    } catch (novuError) {
-      console.error(
-        '❌ Error al enviar trigger a Novu:',
-        novuError?.response?.data || novuError.message || novuError
-      );
-    }
 
     await this.actionLogsService.logAction({
       userId: user.user_id,
@@ -350,30 +297,14 @@ async confirmEmail(token: string): Promise<'confirmed' | 'alreadyConfirmed' | 'e
     }
 
     try {
-      const novuSecretKey = this.configService.get<string>('NOVU_SECRET_KEY');
-      if (!novuSecretKey) {
-        throw new Error('NOVU_SECRET_KEY no está definido');
-      }
-
-      const novu = new Novu(novuSecretKey);
-      await novu.trigger('usuario-activo', {
-        to: {
-          subscriberId: user.user_id.toString(),
-        },
-        payload: {
-          email: user.email || '',
-        },
-      });
-
       this.logger.log(`Notificación push enviada a ${user.email}`);
+      
     } catch (pushError) {
       this.logger.warn(`No se pudo enviar notificación push: ${pushError.message}`);
     }
 
-    this.logger.log('Cuenta activada y correo enviado');
     return 'confirmed';
-  } catch (err) {
-    this.logger.error(`Error confirmando email: ${err.message}`, err.stack);
+  } catch (error) {
     return 'error';
   }
 }

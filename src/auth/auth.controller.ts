@@ -119,7 +119,7 @@ async attachFcm(
     const uid = uidBody ?? uidQuery;
 
     if (!rawUserId || !uid) {
-      throw new BadRequestException('userId y uid son requeridos');
+      throw new BadRequestException('userId y uid (token FCM) son requeridos');
     }
 
     const userId = parseInt(String(rawUserId), 10);
@@ -128,7 +128,7 @@ async attachFcm(
     }
 
     console.log('📩 Recibido userId:', userId);
-    console.log('📩 Recibido uid:', uid);
+    console.log('📩 Recibido FCM token (uid):', uid);
 
     const user = await this.userService.findOne(userId);
     if (!user) {
@@ -142,15 +142,17 @@ async attachFcm(
 
     const resCredentials = await novu.subscribers.setCredentials(
       userId.toString(),
-      PushProviderIdEnum.Pushpad,
-      { deviceTokens: [uid] }
+      PushProviderIdEnum.FCM, // ✅ CAMBIADO A FCM
+      {
+        deviceTokens: [uid],
+      }
     );
 
     console.log('🔐 setCredentials respuesta:', resCredentials);
 
     const triggerRes = await novu.trigger('usuario-activo', {
       to: { subscriberId: userId.toString() },
-      payload: { mensaje: 'Canal Pushpad activo ✨' },
+      payload: { mensaje: 'Canal FCM activo ✨' },
     });
 
     console.log('🚀 Trigger lanzado:', triggerRes);
