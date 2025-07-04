@@ -2,56 +2,27 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Cuenta Activada - {{APP_NAME}}</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: #f9fafb;
-      color: #2A3E4C;
-      margin: 0;
-      padding: 40px 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      text-align: center;
-    }
-    h2 {
-      font-weight: 700;
-      margin-bottom: 12px;
-      font-size: 2rem;
-    }
-    p {
-      font-size: 1.1rem;
-      margin: 8px 0;
-      max-width: 320px;
-      line-height: 1.4;
-    }
-    .button {
-      margin-top: 24px;
-      background-color: #007bff;
-      color: white;
-      padding: 14px 28px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 1.1rem;
-      text-decoration: none;
-      transition: background-color 0.3s ease;
-      display: inline-block;
-    }
-    .button:hover {
-      background-color: #0056b3;
-    }
-  </style>
+  <title>Cuenta Activada - TiendApi</title>
 </head>
-<body>
-  <h2>¡Bienvenido a {{APP_NAME}}!</h2>
-  <p>Tu cuenta ha sido activada con éxito.</p>
-  <p>Puedes acceder a tu cuenta desde el siguiente enlace:</p>
-  <a href="{{loginUrl}}" class="button" target="_blank" rel="noopener">Iniciar sesión</a>
-  <p>Si tienes alguna duda, contáctanos en <a href="mailto:{{supportEmail}}">{{supportEmail}}</a>.</p>
-  <p>Gracias por unirte a nosotros.</p>
-  <p>Saludos,<br>El equipo de {{APP_NAME}}</p>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9fafb; color: #2A3E4C; margin: 0; padding: 40px 20px; text-align: center;">
+  <h2 style="font-weight: 700; margin-bottom: 12px; font-size: 2rem;">¡Bienvenido a {{APP_NAME}}!</h2>
+  <p style="font-size: 1.1rem; margin: 8px 0; max-width: 320px; line-height: 1.4; margin-left: auto; margin-right: auto;">
+    Tu cuenta ha sido activada con éxito.
+  </p>
+  <p style="font-size: 1.1rem; margin: 8px 0; max-width: 320px; line-height: 1.4; margin-left: auto; margin-right: auto;">
+    Puedes acceder a tu cuenta desde el siguiente enlace:
+  </p>
+  <p>
+    <a href="{{loginUrl}}" 
+       style="padding: 14px 28px; background-color: #2A3E4C; color: #00AEEF; border-radius: 6px; font-weight: 600; font-size: 1.1rem; text-decoration: none; display: inline-block;" 
+       target="_blank" rel="noopener">
+       Iniciar sesión
+    </a>
+  </p>
+  <p style="font-size: 1.1rem; margin: 8px 0;">
+    Si tienes alguna duda, contáctanos en <a href="mailto:{{supportEmail}}">{{supportEmail}}</a>.
+  </p>
+  <p style="font-size: 1.1rem; margin: 8px 0;">Gracias por unirte a nosotros.</p>
+  <p style="font-size: 1.1rem; margin: 8px 0;">Saludos,<br>El equipo de {{APP_NAME}}</p>
 </body>
 </html>
