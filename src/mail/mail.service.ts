@@ -14,7 +14,9 @@ export class MailService {
     this.mailFrom = `"${this.configService.get('MAIL_FROM_NAME')}" <${this.configService.get('MAIL_FROM_ADDRESS')}>`;
   }
 
-  async sendConfirmationEmail(email: string, token: string): Promise<void> {
+    async sendConfirmationEmail(email: string, token: string): Promise<void> {
+       const host = this.configService.get('MAIL_HOST');
+         this.logger.log(`Usando SMTP host: ${host}`); 
     const frontendUrl = this.configService.get('FRONTEND_URL');
     const activationUrl = `${frontendUrl}/auth/confirm-email?token=${encodeURIComponent(token)}`;
 

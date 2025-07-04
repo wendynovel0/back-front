@@ -87,18 +87,7 @@ export class AuthService {
       activation_token: activationToken,
     });
 
-    try {
-      const confirmationUrl = `${this.configService.get('FRONTEND_URL')}/home?token=${activationToken}`;
-await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
-      await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
-      console.log('Correo de activación enviado correctamente');
-
-      
-    } catch (novuError) {
-      this.logger.warn('No se pudo registrar en Novu para notificaciones push:', novuError.message);
-    }
-
-    try {
+     try {
       console.log('📤 Enviando correo de activación a:', normalizedEmail);
       await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
       this.logger.log(`Correo de activación enviado a ${normalizedEmail}`);
@@ -106,7 +95,6 @@ await this.mailService.sendConfirmationEmail(normalizedEmail, activationToken);
       this.logger.error(`Error enviando correo de activación a ${normalizedEmail}: ${error.message}`);
       throw new InternalServerErrorException('No se pudo enviar el correo de confirmación');
     }
-
     return {
       success: true,
       message: 'Usuario registrado. Por favor revisa tu correo para confirmar tu cuenta.',
